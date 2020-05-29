@@ -31,7 +31,6 @@
 #include "gflags/gflags.h"
 #include "eigen3/Eigen/Dense"
 #include "eigen3/Eigen/Geometry"
-#include "gflags/gflags.h"
 #include "geometry_msgs/Pose2D.h"
 #include "geometry_msgs/PoseArray.h"
 #include "geometry_msgs/PoseStamped.h"
@@ -62,6 +61,7 @@ DEFINE_string(laser_topic, "scan", "Name of ROS topic for LIDAR data");
 DEFINE_string(odom_topic, "odom", "Name of ROS topic for odometry data");
 
 bool run_ = true;
+ekf_tracker::EkfTracker tracker_;
 
 void LaserCallback(const sensor_msgs::LaserScan& msg) {
   if (FLAGS_v > 0) {
