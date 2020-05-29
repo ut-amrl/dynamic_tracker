@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.com/ut-amrl/dynamic_tracker.svg?branch=master)](https://travis-ci.com/ut-amrl/dynamic_tracker)
+
 # Dynamic Tracker
 
 Multi-sensor, multi-platform dynamic tracker.
