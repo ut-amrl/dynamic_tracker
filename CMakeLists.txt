@@ -38,3 +38,7 @@ ROSBUILD_ADD_EXECUTABLE(ekf_tracker
                         src/ekf_tracker/ekf_tracker_main.cc
                         src/ekf_tracker/ekf_tracker.cc)
 TARGET_LINK_LIBRARIES(ekf_tracker ${libs})
+
+ADD_EXECUTABLE(tracker_unit_tests
+               src/tests/ekf_tracker_tests.cc)
+TARGET_LINK_LIBRARIES(tracker_unit_tests gtest gtest_main ${libs})
