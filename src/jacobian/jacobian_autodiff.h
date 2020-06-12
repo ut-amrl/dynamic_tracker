@@ -25,13 +25,20 @@
 #include "ceres/jet.h"
 #include "eigen3/Eigen/Dense"
 
+namespace jacobian {
+
 // T = basic type (float / double)
 // M = Input dimension
 // N = Output dimension
-// F = the function being differentiated. Takes in an M x 1 vector, returns an N x 1 vector.
+// F = the function being differentiated.
+//     Takes in an M x 1 vector, returns an N x 1 vector.
+// F can optionally also take in a variable number of additional parameters.
 // Return = N x M matrix of Jacobian.
-template<typename T, int M, int N, typename F>
-Eigen::Matrix<T, N, M> Autodiff(const Eigen::Matrix<T, M, 1>& x, const F& f) {
+template<typename T, int M, int N, typename F, class ...AdditionalArgs>
+Eigen::Matrix<T, N, M> Autodiff(
+    const Eigen::Matrix<T, M, 1>& x,
+    const F& f,
+    AdditionalArgs... additional_args) {
   // Allocate the return Jacobian matrix.
   Eigen::Matrix<T, N, M> J;
 
@@ -47,7 +54,8 @@ Eigen::Matrix<T, N, M> Autodiff(const Eigen::Matrix<T, M, 1>& x, const F& f) {
   }
 
   // Call the function with this input, and store the result.
-  const Eigen::Matrix<ceres::Jet<T, M>, N, 1> output = f(input);
+  const Eigen::Matrix<ceres::Jet<T, M>, N, 1> output =
+      f(input, additional_args...);
 
   // For all output dimensions j.
   for (int j = 0; j < N; ++j) {
@@ -60,5 +68,7 @@ Eigen::Matrix<T, N, M> Autodiff(const Eigen::Matrix<T, M, 1>& x, const F& f) {
   // Return the resultant Jacobian.
   return J;
 }
+
+}  // namespace jacobian
 
 #endif  // JACOBIAN_AUTODIFF_H

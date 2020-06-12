@@ -65,7 +65,7 @@ bool run_ = true;
 const int kStateSize = 4;
 // Observation = [x, y]^T
 const int kObservationSize = 2;
-ekf_tracker::EkfTracker<float, 4, 2> tracker_;
+// ekf_tracker::EkfTracker<kStateSize, kObservationSize> tracker_;
 
 void LaserCallback(const sensor_msgs::LaserScan& msg) {
   if (FLAGS_v > 0) {
