@@ -25,6 +25,7 @@
 #include "gflags/gflags.h"
 #include "gtest/gtest.h"
 
+#include "ekf_tracker/ekf_tracker.h"
 #include "jacobian/jacobian_autodiff.h"
 
 using jacobian::Autodiff;
@@ -119,3 +120,96 @@ TEST(VectorAutoDiff, AdditionalInput) {
   }
   EXPECT_DOUBLE_EQ((J_expected - J).norm(), 0.0);
 }
+
+struct TestObservationModel{
+  template<typename T>
+  Eigen::Matrix<T, 2, 1> operator()(
+      const Eigen::Matrix<T, 4, 1>& x, double t) const {
+    Eigen::Matrix<T, 2, 1> y;
+    y[0] = x[0];
+    y[1] = x[1];
+    return y;
+  }
+  Eigen::Matrix<float, 2, 2> ObservationNoise(
+      const Eigen::Matrix<float, 4, 1>& x, double t) const {
+    Eigen::Matrix<float, 2, 2> r;
+    r << 1, 0,
+         0, 1;
+    return r;
+  }
+};
+
+struct TestMotionModel{
+  template<typename T>
+  Eigen::Matrix<T, 4, 1> operator() (
+      const Eigen::Matrix<T, 4, 1>& x, double dt) const {
+    Eigen::Matrix<T, 4, 1> x_p;
+    x_p[0] = x[0] + T(dt) * x[2];
+    x_p[1] = x[1] + T(dt) * x[3];
+    x_p[2] = x[2];
+    x_p[3] = x[3];
+    return x_p;
+  }
+
+  Eigen::Matrix<float, 4, 4> ProcessNoise(
+      const Eigen::Matrix<float, 4, 1>& x, double t) const {
+    Eigen::Matrix<float, 4, 4> q;
+    q << 1, 0, 0, 0,
+         0, 1, 0, 0,
+         0, 0, 1, 0,
+         0, 0, 0, 1;
+    return q;
+  }
+};
+
+TEST(EKF, Predict) {
+  ekf::EkfTracker<4, 2, TestMotionModel, TestObservationModel> ekf;
+  TestMotionModel motion_model;
+  TestObservationModel obs_model;
+  ekf.SetModels(&motion_model, &obs_model);
+  Eigen::Vector4f x;
+  x << 0, 0, 0, 0;
+  Eigen::Matrix<float, 4, 4> p;
+  p << 1, 0, 0, 0,
+       0, 1, 0, 0,
+       0, 0, 1, 0,
+       0, 0, 0, 1;
+  ekf.Initialize(x, p, 0);
+
+  Eigen::Matrix<float, 2, 1> s;
+  s << 1, 1;
+  const double t = 0.1;
+  ekf.Update(s, t);
+
+  // Hand-computations:
+  // Predict:
+  //   x = [0, 0, 0, 0]^T
+  //   p = [1, 0, 0, 0
+  //        0, 1, 0, 0
+  //        0, 0, 1, 0
+  //        0, 0, 0, 1]
+  //   F = [1, 0, 0.1,  0
+  //        0, 1, 0,    0.1
+  //        0, 0, 1,    0,
+  //        0, 0, 0,    1]
+
+  //  x+ = [0, 0, 0, 0]^T
+  //  p+ = [2.01,  0,    0,  0
+  //        0,     2.01, 0,  0.1
+  //        0.1,   0,    2,  0
+  //        0,     0.1,  0,  2]
+  // Innovation = [1, 1]^T
+  // H = [1, 0, 0, 0
+  //      0, 1, 0, 0]
+  // S = [2, 0
+  //      0, 2]
+  // K = [0.5, 0
+  //      0,   0.5
+  //      0,   0
+  //      0,   0]
+  //  x+ = [0, 0, 0, 0]^T
+  x = ekf.GetState();
+  ASSERT_FLOAT_EQ(x[0], 0.5);
+  ASSERT_FLOAT_EQ(x[1], 0.5);
+}
+

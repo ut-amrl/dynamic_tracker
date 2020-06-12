@@ -26,7 +26,9 @@
 #ifndef SRC_EKF_TRACKER_EKF_TRACKER_H_
 #define SRC_EKF_TRACKER_EKF_TRACKER_H_
 
-namespace ekf_tracker {
+namespace ekf {
+
+static const bool kDebug = true;
 
 // A passive EKF tracker (i.e. no controls input).
 template <int kStateSize, int kObservationSize,
@@ -53,12 +55,22 @@ class EkfTracker {
   }
   // Predict the state forward by delta-time dt.
   void Predict(double dt) {
+    auto h = *motion_model_;
     const auto f_jacobian =
         jacobian::Autodiff<float, kStateSize, kStateSize, MotionModel>(
-            x_, *motion_model_, dt);
-    const auto process_noise = motion_model_->ProcessNoise(x_, dt);
-    x_ = *motion_model_(x_, dt);
+            x_, h, dt);
+    const auto process_noise = h.ProcessNoise(x_, dt);
+    if (kDebug) {
+      std::cout << "\nPredict\npre: x = \n" << x_ << "\n"
+                << "p = \n" << p_ << "\n"
+                << "F = \n" << f_jacobian << "\n";
+
+    }
+    x_ = h(x_, dt);
     p_ = f_jacobian * p_ * f_jacobian.transpose() + process_noise;
+    if (kDebug) {
+      std::cout << "post: x = \n" << x_ << "\np =\n" << p_ << "\n";
+    }
     time_ += dt;
   }
   // Apply an observation update.
@@ -68,18 +80,38 @@ class EkfTracker {
     if (t > time_) {
       Predict(t - time_);
     }
+    auto h = *obs_model_;
     const auto h_jacobian =
         jacobian::Autodiff<float, kStateSize, kObservationSize,
-            ObservationModel>(x_, *obs_model_, t);
-    const auto observation_noise = obs_model_->ObservationNoise(x_, t);
-    const auto innovation = s - obs_model_(x_, t);
+            ObservationModel>(x_, h, t);
+    if (kDebug) {
+      std::cout << "\nUpdate\npre: x = \n" << x_ << "\n"
+                << "p = \n" << p_ << "\n"
+                << "H = \n" << h_jacobian << "\n"
+                << "s = \n" << s << "\n";
+    }
+    const auto observation_noise = h.ObservationNoise(x_, t);
+    const auto innovation = s - h(x_, t);
     const auto innovation_cov =
         h_jacobian * p_ * h_jacobian.transpose() + observation_noise;
-    const auto kalman_gain = p_ * h_jacobian * innovation_cov.inverse();
+    const auto kalman_gain =
+        p_ * h_jacobian.transpose() * innovation_cov.inverse();
+    x_ = x_ + kalman_gain * innovation;
+    p_ = (Covariance::Identity() - kalman_gain * h_jacobian) * p_;
     time_ = t;
+    if (kDebug) {
+      std::cout << "innovation = \n" << innovation << "\n"
+                << "innovation_cov = \n" << innovation_cov << "\n"
+                << "kalman_gain = \n" << kalman_gain << "\n";
+      std::cout << "post: x = \n" << x_ << "\np = \n" << p_ << "\n";
+    }
   }
-  State GetState() const;
-  Covariance GetCovariance() const;
+  State GetState() const {
+    return x_;
+  }
+  Covariance GetCovariance() const {
+    return p_;
+  }
 
  private:
   // Current state estimate, from
