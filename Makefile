@@ -34,3 +34,7 @@ build/CMakeLists.txt.copy: CMakeLists.txt Makefile
 		-DCMAKE_CXX_COMPILER=$(CXX_compiler) \
 		-DCMAKE_C_COMPILER=$(C_compiler) ..
 	cp CMakeLists.txt build/CMakeLists.txt.copy
+
+test: all
+	./bin/unit_tests
+	./bin/tracker_unit_tests

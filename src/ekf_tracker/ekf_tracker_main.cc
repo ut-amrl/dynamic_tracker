@@ -61,7 +61,11 @@ DEFINE_string(laser_topic, "scan", "Name of ROS topic for LIDAR data");
 DEFINE_string(odom_topic, "odom", "Name of ROS topic for odometry data");
 
 bool run_ = true;
-ekf_tracker::EkfTracker tracker_;
+// State = [x, y, vx, vy]^T
+const int kStateSize = 4;
+// Observation = [x, y]^T
+const int kObservationSize = 2;
+ekf_tracker::EkfTracker<float, 4, 2> tracker_;
 
 void LaserCallback(const sensor_msgs::LaserScan& msg) {
   if (FLAGS_v > 0) {

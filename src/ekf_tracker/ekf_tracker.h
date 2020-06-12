@@ -19,12 +19,28 @@
 // SOFTWARE.
 // ========================================================================
 
+#include "eigen3/Eigen/Dense"
+
 #ifndef SRC_EKF_TRACKER_EKF_TRACKER_H_
 #define SRC_EKF_TRACKER_EKF_TRACKER_H_
 
 namespace ekf_tracker {
 
+template <typename T, int kStateSize, int kObservationSize>
 class EkfTracker {
+ typedef Eigen::Matrix<T, kStateSize, 1> State;
+ typedef Eigen::Matrix<T, kStateSize, kStateSize> Covariance;
+ typedef Eigen::Matrix<T, kObservationSize, 1> Observation;
+
+ public:
+  void Initialize(const State& x);
+  void Predict();
+  void Update(const Observation& s);
+  State GetState() const;
+  Covariance GetCovariance() const;
+
+ private:
+  State x_;
 };
 
 }  // namespace ekf_tracker

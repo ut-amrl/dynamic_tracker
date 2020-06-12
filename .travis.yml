@@ -39,4 +39,5 @@ before_install:
 script:
   - source /opt/ros/melodic/setup.bash
   - export ROS_PACKAGE_PATH=`pwd`:$ROS_PACKAGE_PATH
-  - make && ./bin/tracker_unit_tests
+  - make
+  - ./bin/tracker_unit_tests
