@@ -10,7 +10,7 @@ git clone --recurse-submodules
 ## Dependencies
 
 ```bash
-sudo apt install libgflags-dev libgoogle-glog-dev libeigen3-dev  libgtest-dev liblua5.1-dev
+sudo apt install libgflags-dev libgoogle-glog-dev libeigen3-dev  libgtest-dev liblua5.1-dev libceres-dev
 ```
 
 ## Compiling
