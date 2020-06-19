@@ -10,19 +10,61 @@ int main() {
 
     k4a_device_t device = NULL;
 
-    for (uint8_t deviceIndex = 0; deviceIndex < device_count; deviceIndex++)
-    {
-        if (K4A_RESULT_SUCCEEDED != k4a_device_open(deviceIndex, &device))
-        {
+    k4a_device_configuration_t config = K4A_DEVICE_CONFIG_INIT_DISABLE_ALL;
+    config.camera_fps = K4A_FRAMES_PER_SECOND_30;
+    config.color_format = K4A_IMAGE_FORMAT_COLOR_BGRA32;
+    config.color_resolution = K4A_COLOR_RESOLUTION_2160P;
+    config.depth_mode = K4A_DEPTH_MODE_NFOV_UNBINNED;
+
+    for (uint8_t deviceIndex = 0; deviceIndex < device_count; deviceIndex++) {
+        // find open devices
+        if (K4A_RESULT_SUCCEEDED != k4a_device_open(deviceIndex, &device)) {
             printf("%d: Failed to open device\n", deviceIndex);
             continue;
-        }
-        else {
-            printf("Successfully opened device!");
+        } else {
+            printf("Successfully opened device %d!\n", deviceIndex);
         }
 
+        // set config values for device
+        k4a_device_configuration_t config = K4A_DEVICE_CONFIG_INIT_DISABLE_ALL;
+        config.camera_fps = K4A_FRAMES_PER_SECOND_30;
+        config.color_format = K4A_IMAGE_FORMAT_COLOR_BGRA32;
+        config.color_resolution = K4A_COLOR_RESOLUTION_2160P;
+        config.depth_mode = K4A_DEPTH_MODE_NFOV_UNBINNED;
+
+        // try to start cameras
+        if (K4A_RESULT_SUCCEEDED != k4a_device_start_cameras(device, &config)) {
+            printf("Failed to start device\n");
+            k4a_device_close(device);
+            continue;
+        } else {
+            printf("Successfully opened cameras!\n");
+        }
+
+        k4a_capture_t capture = NULL; 
+        switch (k4a_device_get_capture(device, &capture, K4A_WAIT_INFINITE)) {
+        case K4A_WAIT_RESULT_SUCCEEDED: {
+            k4a_image_t image = k4a_capture_get_color_image(capture);
+            printf(" | Depth16 res:%4dx%4d stride:%5d\n",
+                k4a_image_get_height_pixels(image),
+                k4a_image_get_width_pixels(image),
+                k4a_image_get_stride_bytes(image));
+            k4a_image_release(image);
+            k4a_capture_release(capture);
+            break;
+        }
+        case K4A_WAIT_RESULT_TIMEOUT:
+            printf("Timed out waiting for a capture\n");
+            k4a_device_close(device);
+            break;
+        case K4A_WAIT_RESULT_FAILED:
+            printf("Failed to read a capture\n");
+            k4a_device_close(device);
+            break;
+        }
         k4a_device_close(device);
     }
+    return 0;
     // // open the recording
     // if (k4a_playback_open("test_output.mkv", &playback_handle) != K4A_RESULT_SUCCEEDED)
     // {
