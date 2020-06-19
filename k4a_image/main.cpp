@@ -7,6 +7,22 @@ k4a_playback_t playback_handle = NULL;
 int main() {
     uint32_t device_count = k4a_device_get_installed_count();
     printf("Found %d connected devices:\n", device_count);
+
+    k4a_device_t device = NULL;
+
+    for (uint8_t deviceIndex = 0; deviceIndex < device_count; deviceIndex++)
+    {
+        if (K4A_RESULT_SUCCEEDED != k4a_device_open(deviceIndex, &device))
+        {
+            printf("%d: Failed to open device\n", deviceIndex);
+            continue;
+        }
+        else {
+            printf("Successfully opened device!");
+        }
+
+        k4a_device_close(device);
+    }
     // // open the recording
     // if (k4a_playback_open("test_output.mkv", &playback_handle) != K4A_RESULT_SUCCEEDED)
     // {
