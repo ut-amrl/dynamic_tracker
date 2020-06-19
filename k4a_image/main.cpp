@@ -31,6 +31,7 @@ int main() {
         config.color_format = K4A_IMAGE_FORMAT_COLOR_BGRA32;
         config.color_resolution = K4A_COLOR_RESOLUTION_2160P;
         config.depth_mode = K4A_DEPTH_MODE_NFOV_UNBINNED;
+        config.synchronized_images_only = true;
 
         // try to start cameras
         if (K4A_RESULT_SUCCEEDED != k4a_device_start_cameras(device, &config)) {
