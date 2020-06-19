@@ -48,17 +48,12 @@ int main() {
         switch (k4a_device_get_capture(device, &capture, K4A_WAIT_INFINITE)) {
         case K4A_WAIT_RESULT_SUCCEEDED: {
             k4a_image_t image = k4a_capture_get_color_image(capture);
-            int rows = k4a_image_get_height_pixels(image);
-            int cols = k4a_image_get_width_pixels(image);
-            // image buffer
-            uint8_t* buffer = k4a_image_get_buffer(image);
-            // opencv matrix
-            cv::Mat colorMat(rows, cols, CV_8UC4, (void*) buffer, cv::Mat::AUTO_STEP);
-            cv::imshow("Image", colorMat);
-            printf("res:%4dx%4d\n", rows, cols); 
+            printf(" | Depth16 res:%4dx%4d stride:%5d\n",
+                k4a_image_get_height_pixels(image),
+                k4a_image_get_width_pixels(image),
+                k4a_image_get_stride_bytes(image));
             k4a_image_release(image);
             k4a_capture_release(capture);
-            
             break;
         }
         case K4A_WAIT_RESULT_TIMEOUT:
