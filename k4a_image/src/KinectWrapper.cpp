@@ -2,6 +2,7 @@
 #include <k4arecord/playback.h>
 #include <cstdio>
 #include <cstdlib>
+#include <opencv2/opencv.hpp>
 
 using namespace std;
 
@@ -43,7 +44,7 @@ void KinectWrapper::capture() {
     //     }
     // }
     k4a_capture_t capture = NULL; 
-    switch (k4a_device_get_capture(device, &capture, K4A_WAIT_INFINITE)) {
+    switch (k4a_device_get_capture(_device, &capture, K4A_WAIT_INFINITE)) {
     case K4A_WAIT_RESULT_SUCCEEDED: {
         k4a_image_t image = k4a_capture_get_color_image(capture);
         int rows = k4a_image_get_height_pixels(image);
@@ -61,11 +62,11 @@ void KinectWrapper::capture() {
     }
     case K4A_WAIT_RESULT_TIMEOUT:
         printf("Timed out waiting for a capture\n");
-        k4a_device_close(device);
+        k4a_device_close(_device);
         break;
     case K4A_WAIT_RESULT_FAILED:
         printf("Failed to read a capture\n");
-        k4a_device_close(device);
+        k4a_device_close(_device);
         break;
     }
 }
