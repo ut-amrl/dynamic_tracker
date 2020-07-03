@@ -54,6 +54,7 @@ void KinectWrapper::capture() {
         // opencv matrix
         cv::Mat colorMat(rows, cols, CV_8UC4, (void*) buffer, cv::Mat::AUTO_STEP);
         cv::imshow("Image", colorMat);
+	int wait = cv::waitKey(30000000);
         printf("res:%4dx%4d\n", rows, cols); 
         k4a_image_release(image);
         k4a_capture_release(capture);
