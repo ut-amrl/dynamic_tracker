@@ -1,3 +1,6 @@
 [submodule "src/shared"]
 	path = src/shared
 	url = https://github.com/ut-amrl/amrl_shared_lib.git
+[submodule "k4a_image/share/vision_geometry"]
+	path = k4a_image/share/vision_geometry
+	url = git@github.com:utexas-bwi/vision_geometry.git
