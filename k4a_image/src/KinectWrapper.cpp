@@ -11,6 +11,13 @@ KinectWrapper::KinectWrapper(uint8_t deviceIndex) : _device(NULL) {
         cout << "aborting" << endl;
         abort();
     }
+    k4a_calibration_t calibration;
+    k4a_device_get_calibration(_device, K4A_DEPTH_MODE_NFOV_UNBINNED, K4A_COLOR_RESOLUTION_2160P, &calibration);
+    cout << "found " << calibration.color_camera_calibration.intrinsics.parameter_count << " intrinsic params" << endl;
+    cout << "cx: " << calibration.color_camera_calibration.intrinsics.parameters.param.cx << endl;
+    cout << "cy: " << calibration.color_camera_calibration.intrinsics.parameters.param.cy << endl;
+    cout << "fx: " << calibration.color_camera_calibration.intrinsics.parameters.param.fx << endl;
+    cout << "fy: " << calibration.color_camera_calibration.intrinsics.parameters.param.fy << endl;
 
     k4a_device_configuration_t config = K4A_DEVICE_CONFIG_INIT_DISABLE_ALL;
     config.camera_fps = K4A_FRAMES_PER_SECOND_30;

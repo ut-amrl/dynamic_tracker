@@ -15,3 +15,5 @@ compile_commands.json
 CTestTestfile.cmake
 _deps
 .DS_Store
+
+k4a_image/captures/*
