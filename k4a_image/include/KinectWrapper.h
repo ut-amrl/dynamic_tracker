@@ -12,6 +12,7 @@ public:
     ~KinectWrapper();
 
     void capture();
+    void display();
 
 protected:
     k4a_device_t _device;
