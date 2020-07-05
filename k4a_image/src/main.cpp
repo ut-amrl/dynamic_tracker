@@ -6,23 +6,33 @@
 #include <vision_geometry/Util.h>
 #include <vision_geometry/CameraIntrinsics.h>
 #include <vision_geometry/HomographyShortcuts.h>
-#include <Eigen/Dense>
-#include "ceres/ceres.h"
+#include <vision_geometry/LinearAlgebraShortcuts.h>
+#include <vision_geometry/HomCartShortcuts.h>
 
 using namespace std;
 using namespace cv;
 using namespace Eigen;
+
+const double SCALE_FACTOR = 4;
 
 const CameraIntrinsics intrinsics(1834.17,
                                           1833.1, 0.,
                                           1910.01,
                                           1113.17);
 k4a_playback_t playback_handle = NULL;
+
+Mat scale(Mat in, double scaleFactor){
+    Mat scaled;
+    Size size(in.cols / scaleFactor, in.rows / scaleFactor);
+    resize(in, scaled, size);
+    return scaled;
+}
+
 int main() {
     // KinectWrapper kinectWrapper(0);
     // kinectWrapper.display();
 
-    Size s(4, 6);
+    Size s(6, 4);
     ModelChessboard chessboard(s.height, s.width, 23.0);
 
     vector<string> files = listFiles(
@@ -33,20 +43,36 @@ int main() {
     vector<MatrixXd> camPoints;
     detectCorners(s, images, detections, camPoints);
     cout << camPoints[0] << endl;
+    
+    MatrixXd chessboardPoints = chessboard.getModelCBH2D();
+    cout << chessboardPoints << endl;
 
-    vector<MatrixXd> homographies = computeHomographies(chessboard.getModelCBH2D(), camPoints);
+    vector<MatrixXd> homographies = computeHomographies(chessboardPoints, camPoints);
 
-    // cv::Mat frame = imread("/home/henry/dynamic_tracker/k4a_image/captures/1593831230.jpg");
-    // Mat c;
-    // bool found = findChessboardCorners(frame, s, c, CALIB_CB_FAST_CHECK);
-    // if(found){
-    //         cout << "found corners" << endl;
-    //         drawChessboardCorners(frame, s, c, found);
-    // } else{
-    // }
+    // Try going from object points to camera points
+    MatrixXd homPts = homographies[0] * chessboardPoints;
+    homPts = divideByLastRowRemoveLastRow(homPts);
+    cout << homPts << endl;
+    Scalar colorA(0, 255, 255, 127);
+    Mat scaled = scale(images[0], SCALE_FACTOR);
+    // Draw calculated pointed
+    showPoints(scaled, homPts / SCALE_FACTOR, colorA);
 
-    // cv::imshow("Frame", frame);
-    // waitKey(0);
+    // Image rectification
+    MatrixXd homInv = homographies[0].inverse();
+    // Apply a translation after applying homography
+    MatrixXd t (3,3);
+    t << 1, 0, 1000,
+         0, 1, 1000,
+         0, 0, 1;
+    homInv = t * homInv;
+    Mat rectified;
+    Mat H = convertToCVMat(homInv);
+    warpPerspective(images[0], rectified, H, images[0].size());
+    rectified = scale(rectified, SCALE_FACTOR);
+    imshow("Rectified", rectified);
+
+    waitKey(0);
 
 
     // cv::VideoCapture cap("/home/henry/Downloads/chessboard.mkv"); 
