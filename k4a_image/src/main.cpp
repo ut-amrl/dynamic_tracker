@@ -35,6 +35,10 @@ int main() {
     Size s(6, 4);
     ModelChessboard chessboard(s.height, s.width, 23.0);
 
+    MatrixXd chessboardPoints = chessboard.getModelCBH2D();
+    cout << "Chessboard points" << endl;
+    cout << chessboardPoints << endl;
+
     vector<string> files = listFiles(
       "/home/henry/dynamic_tracker/k4a_image/captures/");
     vector<Mat> images = loadImages(files);
@@ -42,21 +46,28 @@ int main() {
     cout << "loadImages:  " << images.size() << endl;
     vector<MatrixXd> camPoints;
     detectCorners(s, images, detections, camPoints);
+    cout << "Detected corners:" << endl;
     cout << camPoints[0] << endl;
     
-    MatrixXd chessboardPoints = chessboard.getModelCBH2D();
-    cout << chessboardPoints << endl;
 
     vector<MatrixXd> homographies = computeHomographies(chessboardPoints, camPoints);
 
     // Try going from object points to camera points
     MatrixXd homPts = homographies[0] * chessboardPoints;
     homPts = divideByLastRowRemoveLastRow(homPts);
+    cout << "Estimated points from homography (chessboard points -> camera points):" << endl;
     cout << homPts << endl;
+
+    MatrixXd optHom = optimizeHomography(chessboardPoints, camPoints[0], homographies[0]);
+    MatrixXd optHomPts = optHom * chessboardPoints;
+    optHomPts = divideByLastRowRemoveLastRow(optHomPts);
+    cout << "Optimized points from homography (chessboard points -> camera points):" << endl;
+    cout << optHomPts << endl;
+
     Scalar colorA(0, 255, 255, 127);
     Mat scaled = scale(images[0], SCALE_FACTOR);
     // Draw calculated pointed
-    showPoints(scaled, homPts / SCALE_FACTOR, colorA);
+    showPoints(scaled, optHomPts / SCALE_FACTOR, colorA);
 
     // Image rectification
     MatrixXd homInv = homographies[0].inverse();
