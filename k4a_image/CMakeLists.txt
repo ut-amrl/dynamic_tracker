@@ -14,6 +14,14 @@ add_executable(k4a_image
     src/main.cpp
 )
 
+add_executable(server
+    src/server.cpp
+)
+
+add_executable(client
+    src/client.cpp
+)
+
 include_directories(
 	include
 	share/vision_geometry/include/
