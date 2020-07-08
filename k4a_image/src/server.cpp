@@ -9,10 +9,13 @@
 #include <iostream>
 #include <vector>
 
+#include <Eigen/Dense>
+
 #define PORT 12345
-#define NUM_CLIENTS 3
+#define NUM_CLIENTS 1
 
 using namespace std;
+using namespace Eigen;
 
 vector<int> clients;
 
@@ -56,21 +59,59 @@ int initSocket()
         }
         else
         {
+            // Confirm client # to client
             char buffer[256];
             sprintf(buffer, "%d", connectedClients);
             if (write(newsockfd, buffer, sizeof(buffer)) < 0)
             {
                 perror("ERROR writing to socket");
-                return 1;
             }
+
+            // Get number of cameras connected to client
+            int cameras = 0;
+            if (read(newsockfd, &cameras, sizeof(cameras)) < 0)
+            {
+                perror("ERROR reading from socket");
+            }
+            else
+            {
+                cameras = ntohl(cameras);
+            }
+
             map[newsockfd] = connectedClients;
             clients.push_back(newsockfd);
-            cout << "Client #" << connectedClients << " connected" << endl;
+            cout << "Client #" << connectedClients << " connected with " << cameras << " kinects" << endl;
             connectedClients++;
         }
     }
     close(sockfd);
     return 0;
+}
+
+vector<MatrixXd> captureAllCorners()
+{
+    vector<MatrixXd> result;
+    for (int sockfd : clients)
+    {
+        // Get size of byte array
+        int size = 0;
+        int n = read(sockfd, &size, sizeof(size));
+        if (n < 0)
+        {
+            perror("ERROR reading from socket (captureImages size)");
+        }
+
+        // Receive array and convert back to 2xN eigen matrix
+        double *recvArray = (double *)malloc(sizeof(double) * size);
+        n = read(sockfd, recvArray, sizeof(double) * size);
+        if (n < 0)
+        {
+            perror("ERROR reading from socket (captureImages data)");
+        }
+        MatrixXd corners = Map<MatrixXd>(recvArray, 2, size / 2);
+        result.push_back(corners);
+    }
+    return result;
 }
 
 int main(int argc, char *argv[])
@@ -81,9 +122,10 @@ int main(int argc, char *argv[])
     {
         char buffer[256];
         bzero(buffer, 256);
-        printf("Please enter the message: ");
+        printf("Please enter the message: \n");
         fgets(buffer, 256, stdin);
 
+        // Message clients
         for (int sockfd : clients)
         {
             int n = send(sockfd, buffer, sizeof(buffer), MSG_NOSIGNAL);
@@ -91,6 +133,20 @@ int main(int argc, char *argv[])
             {
                 perror("ERROR writing to socket");
             }
+        }
+
+        switch (buffer[0])
+        {
+        case 'a':
+        {
+            vector<MatrixXd> v = captureAllCorners();
+            cout << v[0] << endl;
+        }
+        break;
+        case 'b':
+        {
+        }
+        break;
         }
     }
 
