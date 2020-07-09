@@ -20,6 +20,7 @@ add_executable(server
 
 add_executable(client
     src/client.cpp
+    src/KinectWrapper.cpp
 )
 
 include_directories(
@@ -32,6 +33,16 @@ include_directories(
 
 # Dependencies of this library
 target_link_libraries(k4a_image
+    ${Ceres_LIBS}
+    ${OpenCV_LIBS} 
+	${VISION_GEOMETRY_LIBRARY}
+    ceres
+    k4a
+    k4arecord
+)
+
+# Dependencies of this library
+target_link_libraries(client
     ${Ceres_LIBS}
     ${OpenCV_LIBS} 
 	${VISION_GEOMETRY_LIBRARY}

@@ -4,14 +4,15 @@
 #include <k4a/k4a.h>
 #include <k4arecord/record.h>
 #include <k4arecord/playback.h>
+#include <opencv2/opencv.hpp>
 
-
-class KinectWrapper {
+class KinectWrapper
+{
 public:
     KinectWrapper(uint8_t deviceIndex);
     ~KinectWrapper();
 
-    void capture();
+    cv::Mat capture(bool display = false);
     void display();
 
 protected:

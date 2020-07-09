@@ -2,7 +2,6 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <stdlib.h>
 #include <strings.h>
 #include <unistd.h>
 
@@ -10,16 +9,20 @@
 #include <vector>
 
 #include <Eigen/Dense>
-
-#define PORT 12345
-#define NUM_CLIENTS 1
+#include <config.h>
 
 using namespace std;
 using namespace Eigen;
 
-vector<int> clients;
+struct client
+{
+    int fd;
+    int cameras;
+};
 
-int initSocket()
+vector<client> clients;
+
+int initServerSocket()
 {
     // Create the server socket
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -48,7 +51,7 @@ int initSocket()
     listen(sockfd, 5);
 
     int connectedClients = 0;
-    int map[NUM_CLIENTS];
+    cout << "Awaiting " << NUM_CLIENTS << " clients..." << endl;
     while (connectedClients < NUM_CLIENTS)
     {
         // Accept new connection
@@ -78,8 +81,11 @@ int initSocket()
                 cameras = ntohl(cameras);
             }
 
-            map[newsockfd] = connectedClients;
-            clients.push_back(newsockfd);
+            client newClient;
+            newClient.fd = newsockfd;
+            newClient.cameras = cameras;
+
+            clients.push_back(newClient);
             cout << "Client #" << connectedClients << " connected with " << cameras << " kinects" << endl;
             connectedClients++;
         }
@@ -91,8 +97,43 @@ int initSocket()
 vector<MatrixXd> captureAllCorners()
 {
     vector<MatrixXd> result;
-    for (int sockfd : clients)
+    for (client client : clients)
     {
+        cout << "iter cli " << endl;
+        int sockfd = client.fd;
+        // Iterate over cameras
+        for (int i = 0; i < client.cameras; i++)
+        {
+            cout << "iter cam" << endl;
+            // Get size of byte array
+            int size = 0;
+            int n = read(sockfd, &size, sizeof(size));
+            if (n < 0)
+            {
+                perror("ERROR reading from socket (captureImages size)");
+            }
+
+            // Receive array and convert back to 2xN eigen matrix
+            double *recvArray = (double *)malloc(sizeof(double) * size);
+            n = read(sockfd, recvArray, sizeof(double) * size);
+            if (n < 0)
+            {
+                perror("ERROR reading from socket (captureImages data)");
+            }
+            MatrixXd corners = Map<MatrixXd>(recvArray, 2, size / 2);
+            result.push_back(corners);
+            free(recvArray);
+        }
+    }
+    return result;
+}
+
+vector<MatrixXd> getSampleEigen()
+{
+    vector<MatrixXd> result;
+    for (client client : clients)
+    {
+        int sockfd = client.fd;
         // Get size of byte array
         int size = 0;
         int n = read(sockfd, &size, sizeof(size));
@@ -110,6 +151,7 @@ vector<MatrixXd> captureAllCorners()
         }
         MatrixXd corners = Map<MatrixXd>(recvArray, 2, size / 2);
         result.push_back(corners);
+        free(recvArray);
     }
     return result;
 }
@@ -117,7 +159,7 @@ vector<MatrixXd> captureAllCorners()
 int main(int argc, char *argv[])
 {
 
-    initSocket();
+    initServerSocket();
     while (true)
     {
         char buffer[256];
@@ -126,8 +168,9 @@ int main(int argc, char *argv[])
         fgets(buffer, 256, stdin);
 
         // Message clients
-        for (int sockfd : clients)
+        for (client client : clients)
         {
+            int sockfd = client.fd;
             int n = send(sockfd, buffer, sizeof(buffer), MSG_NOSIGNAL);
             if (n < 0)
             {
@@ -140,11 +183,15 @@ int main(int argc, char *argv[])
         case 'a':
         {
             vector<MatrixXd> v = captureAllCorners();
-            cout << v[0] << endl;
+            if (v.size() > 0)
+                cout << v[0] << endl;
         }
         break;
         case 'b':
         {
+            vector<MatrixXd> v = getSampleEigen();
+            cout << "Received:\n"
+                 << v[0] << endl;
         }
         break;
         }
