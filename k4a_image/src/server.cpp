@@ -99,12 +99,10 @@ vector<MatrixXd> captureAllCorners()
     vector<MatrixXd> result;
     for (client client : clients)
     {
-        cout << "iter cli " << endl;
         int sockfd = client.fd;
         // Iterate over cameras
         for (int i = 0; i < client.cameras; i++)
         {
-            cout << "iter cam" << endl;
             // Get size of byte array
             int size = 0;
             int n = read(sockfd, &size, sizeof(size));

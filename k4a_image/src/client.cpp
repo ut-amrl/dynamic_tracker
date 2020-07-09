@@ -21,6 +21,8 @@
 #include <vision_geometry/LinearAlgebraShortcuts.h>
 #include <vision_geometry/HomCartShortcuts.h>
 
+#include <memory>
+
 using namespace cv;
 using namespace Eigen;
 using namespace std;
@@ -65,16 +67,18 @@ int initClientSocket()
 }
 
 // Capture images from all cameras and send corners (if found) back to server
-void captureAllCorners(int sockfd, vector<KinectWrapper> kinects)
+void captureAllCorners(int sockfd, vector<shared_ptr<KinectWrapper>> &kinects)
 {
-    for (KinectWrapper kinect : kinects)
+    for (shared_ptr<KinectWrapper> kinect : kinects)
     {
         cv::Size s(CBOARD_ROWS, CBOARD_COLS);
-        Mat image = kinect.capture();
-
+        Mat image = kinect->capture();
+        // Kinect outputs BGRA so we need to convert to BGR for findChessboardCorners
+        Mat convert;
+        cvtColor(image, convert, CV_BGRA2BGR);
         Mat detections;
         MatrixXd camPoints;
-        if (!detectFrameCorners(s, image, detections, camPoints))
+        if (!detectFrameCorners(s, convert, detections, camPoints))
         {
             // indicate null if not found
             MatrixXd replace(2, 1);
@@ -128,11 +132,10 @@ void sampleEigen(int sockfd)
 int main(int argc, char *argv[])
 {
     int sockfd = initClientSocket();
-    vector<KinectWrapper> kinects;
+    vector<shared_ptr<KinectWrapper>> kinects;
     for (int i = 0; i < k4a_device_get_installed_count(); i++)
     {
-        KinectWrapper kinect(i);
-        kinects.push_back(kinect);
+        kinects.push_back(make_shared<KinectWrapper>(i));
     }
 
     if (sockfd == -1)

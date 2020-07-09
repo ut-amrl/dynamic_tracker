@@ -39,6 +39,7 @@ KinectWrapper::KinectWrapper(uint8_t deviceIndex) : _device(NULL)
 
 KinectWrapper::~KinectWrapper()
 {
+    cout << "Destructing... do not use device handle again" << endl;
     k4a_device_close(_device);
 }
 
@@ -56,7 +57,7 @@ Mat KinectWrapper::capture(bool display)
         // image buffer
         uint8_t *buffer = k4a_image_get_buffer(image);
         // opencv matrix
-        cv::Mat colorMat(rows, cols, CV_8UC4, (void *)buffer, cv::Mat::AUTO_STEP);
+        cv::Mat colorMat = cv::Mat(rows, cols, CV_8UC4, (void *)buffer, cv::Mat::AUTO_STEP).clone();
         if (display)
         {
             cv::imshow("Image", colorMat);
