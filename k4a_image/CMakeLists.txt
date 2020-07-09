@@ -23,12 +23,21 @@ add_executable(client
     src/KinectWrapper.cpp
 )
 
+add_library(sockets SHARED src/sockets.cpp)
+
 include_directories(
 	include
 	share/vision_geometry/include/
     ${Ceres_INCLUDE_DIR}
     ${EIGEN3_INCLUDE_DIR}
 	/usr/include/eigen3
+)
+
+target_link_libraries(sockets
+    ${OpenCV_LIBS} 
+	#${VISION_GEOMETRY_LIBRARY}
+    k4a
+    k4arecord
 )
 
 # Dependencies of this library
@@ -49,4 +58,10 @@ target_link_libraries(client
     ceres
     k4a
     k4arecord
+    sockets
+)
+
+# Dependencies of this library
+target_link_libraries(server
+    sockets
 )

@@ -22,49 +22,11 @@
 #include <vision_geometry/HomCartShortcuts.h>
 
 #include <memory>
+#include <sockets.h>
 
 using namespace cv;
 using namespace Eigen;
 using namespace std;
-
-int initClientSocket()
-{
-    // Create the client socket
-    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    if (sockfd < 0)
-    {
-        perror("ERROR opening socket");
-        return -1;
-    }
-    // Define the server address
-    struct sockaddr_in serv_addr;
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_addr.s_addr = inet_addr(IP);
-    serv_addr.sin_port = htons(PORT);
-
-    if (connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
-    {
-        perror("ERROR connecting");
-        return -1;
-    }
-    // Server will send what connetion number this is
-    char buffer[256];
-    bzero(buffer, 256);
-    if (read(sockfd, buffer, sizeof(buffer)) < 0)
-    {
-        perror("ERROR reading from socket");
-        return -1;
-    }
-    // Tell server how many cameras
-    int devices = htonl(k4a_device_get_installed_count());
-    if (write(sockfd, &devices, sizeof(devices)) < 0)
-    {
-        perror("ERROR writing to socket");
-        return -1;
-    }
-    printf("Successfully connected as client number: %s\n", buffer);
-    return sockfd;
-}
 
 // Capture images from all cameras and send corners (if found) back to server
 void captureAllCorners(int sockfd, vector<shared_ptr<KinectWrapper>> &kinects)
@@ -104,29 +66,29 @@ void captureAllCorners(int sockfd, vector<shared_ptr<KinectWrapper>> &kinects)
     }
 }
 
-// Capture images from all cameras and send corners (if found) back to server
+void image(int sockfd)
+{
+    Mat image;
+    image = imread("/home/henry/Desktop/1593827043.jpg", CV_LOAD_IMAGE_COLOR);
+    // imshow("image", image);
+    // waitKey(0);
+
+    vector<uchar> buf;
+    imencode(".jpg", image, buf);
+    Mat dst = imdecode(buf, 1);
+    // imshow("decoded image", dst);
+    // waitKey(0);
+    sendCV(sockfd, image);
+}
+
+// Send sample eigen matrix
 void sampleEigen(int sockfd)
 {
     MatrixXd m(2, 3);
     m << 1.234, 2.432, 3.4574456,
         4, 5, 6.654;
     cout << m << endl;
-
-    int len = m.rows() * m.cols();
-    double *result = (double *)malloc(sizeof(double) * len);
-    result = m.data();
-    // Send size of array first
-    if (write(sockfd, &len, sizeof(len)) < 0)
-    {
-        perror("ERROR writing to socket");
-    }
-    cout << "sent size" << endl;
-    // Send array
-    if (write(sockfd, result, sizeof(double) * len) < 0)
-    {
-        perror("ERROR writing to socket");
-    }
-    cout << "sent data" << endl;
+    sendEigen(sockfd, m);
 }
 
 int main(int argc, char *argv[])
@@ -164,7 +126,8 @@ int main(int argc, char *argv[])
         switch (buffer[0])
         {
         case 'a':
-            captureAllCorners(sockfd, kinects);
+            //captureAllCorners(sockfd, kinects);
+            image(sockfd);
             break;
         case 'b':
             sampleEigen(sockfd);
