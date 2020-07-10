@@ -1,14 +1,11 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <netinet/in.h>
 #include <unistd.h>
-#include <string.h>
-#include <arpa/inet.h>
+#include <iostream>
+#include <memory>
 
 #include <Eigen/Dense>
-#include <iostream>
-#include <config.h>
 #include <k4a/k4a.h>
 #include <k4arecord/record.h>
 #include <k4arecord/playback.h>
@@ -20,9 +17,8 @@
 #include <vision_geometry/HomographyShortcuts.h>
 #include <vision_geometry/LinearAlgebraShortcuts.h>
 #include <vision_geometry/HomCartShortcuts.h>
-
-#include <memory>
 #include <sockets.h>
+#include <config.h>
 
 using namespace cv;
 using namespace Eigen;
@@ -48,37 +44,19 @@ void captureAllCorners(int sockfd, vector<shared_ptr<KinectWrapper>> &kinects)
             camPoints = replace;
         }
 
-        int len = camPoints.rows() * camPoints.cols();
-        double *result = (double *)malloc(sizeof(double) * len);
-        result = camPoints.data();
-        // Send size of array first
-        if (write(sockfd, &len, sizeof(len)) < 0)
-        {
-            perror("ERROR writing to socket");
-        }
-        cout << "sent size" << endl;
-        // Send array
-        if (write(sockfd, result, sizeof(double) * len) < 0)
-        {
-            perror("ERROR writing to socket");
-        }
-        cout << "sent data" << endl;
+        sendEigen(sockfd, camPoints);
     }
 }
 
-void image(int sockfd)
+void captureImages(int sockfd, vector<shared_ptr<KinectWrapper>> &kinects)
 {
-    Mat image;
-    image = imread("/home/henry/Desktop/1593827043.jpg", CV_LOAD_IMAGE_COLOR);
-    // imshow("image", image);
-    // waitKey(0);
-
-    vector<uchar> buf;
-    imencode(".jpg", image, buf);
-    Mat dst = imdecode(buf, 1);
-    // imshow("decoded image", dst);
-    // waitKey(0);
-    sendCV(sockfd, image);
+    // Mat image;
+    // image = imread("/home/henry/Desktop/1593827043.jpg", CV_LOAD_IMAGE_COLOR);
+    for (shared_ptr<KinectWrapper> kinect : kinects)
+    {
+        Mat image = kinect->capture();
+        sendCV(sockfd, image);
+    }
 }
 
 // Send sample eigen matrix
@@ -126,16 +104,27 @@ int main(int argc, char *argv[])
         switch (buffer[0])
         {
         case 'a':
+        {
             //captureAllCorners(sockfd, kinects);
-            image(sockfd);
-            break;
-        case 'b':
-            sampleEigen(sockfd);
-            printf("Secondary\n");
+            captureImages(sockfd, kinects);
             break;
         }
-
-        // switch: do something
+        case 'b':
+        {
+            captureImages(sockfd, kinects);
+            break;
+        }
+        case 'c':
+        {
+            sampleEigen(sockfd);
+            break;
+        }
+        case 'd':
+        {
+            captureAllCorners(sockfd, kinects);
+            break;
+        }
+        }
     }
     close(sockfd);
     return 0;

@@ -9,11 +9,21 @@
 #include <Eigen/Dense>
 #include <sockets.h>
 
+#include <sys/stat.h>
+
 using namespace std;
 using namespace Eigen;
 using namespace cv;
 
 vector<client> clients;
+
+Mat scale(Mat in, double scaleFactor)
+{
+    Mat scaled;
+    Size size(in.cols / scaleFactor, in.rows / scaleFactor);
+    resize(in, scaled, size);
+    return scaled;
+}
 
 vector<MatrixXd> captureAllCorners()
 {
@@ -47,17 +57,42 @@ vector<MatrixXd> captureAllCorners()
     return result;
 }
 
-void image()
+void getCaptureImages(bool ask)
 {
-    for (client client : clients)
+    cout << (ask ? "Reading images from clients WITH approval" : "Reading images from clients WITHOUT approval") << endl;
+    // Create directory for images
+    int set = std::time(nullptr);
+    std::stringstream dir;
+    dir << "../captures/"
+        << "set_" << set << "/";
+    mkdir(dir.str().c_str(), 0777);
+
+    for (int clientNum = 0; clientNum < clients.size(); clientNum++)
     {
-        int sockfd = client.fd;
-        // Iterate over cameras
-        Mat image;
-        cout << "reading... " << endl;
-        readCV(sockfd, image);
-        imshow("received image", image);
-        waitKey(0);
+        client client = clients[clientNum];
+        //Iterate over cameras
+        for (int i = 0; i < client.cameras; i++)
+        {
+            char approval = 'y';
+            Mat image;
+            readCV(client.fd, image);
+            std::stringstream name;
+            name << "client_" << clientNum << "_cam_" << i;
+            if (ask)
+            {
+                Mat small = scale(image, 4);
+                imshow(name.str(), small);
+                char c = waitKey(0);
+                destroyAllWindows();
+                if (c == 'f')
+                {
+                    approval = 'n';
+                }
+            }
+            name << "_" << approval << ".jpg ";
+            cout << "capturing " << name.str() << endl;
+            imwrite(dir.str() + name.str(), image);
+        }
     }
 }
 
@@ -75,7 +110,6 @@ vector<MatrixXd> getSampleEigen()
 
 int main(int argc, char *argv[])
 {
-
     // Start server
     if (initServerSocket(clients) < 0)
     {
@@ -87,9 +121,16 @@ int main(int argc, char *argv[])
     {
         char buffer[256];
         bzero(buffer, 256);
-        printf("Please enter the message: \n");
+        cout << "---------------------------" << endl;
+        cout << "Reading from the keyboard" << endl;
+        cout << "---------------------------" << endl;
+        cout << "a: capture images from all cameras WITH approval ('f' to reject, any other key to accept)" << endl;
+        cout << "b: capture images from all cameras WITHOUT approval" << endl;
+        cout << "c: try sample eigen data" << endl;
+        cout << "d: none" << endl;
+        cout << "CTRL-C to quit" << endl;
         fgets(buffer, 256, stdin);
-
+        cout << "---------------------------" << endl;
         // Message clients
         for (client client : clients)
         {
@@ -105,19 +146,33 @@ int main(int argc, char *argv[])
         {
         case 'a':
         {
-            // vector<MatrixXd> v = captureAllCorners();
-            // if (v.size() > 0)
-            //     cout << v[0] << endl;
-            image();
+            getCaptureImages(true);
+            break;
         }
-        break;
         case 'b':
+        {
+            getCaptureImages(false);
+            break;
+        }
+        case 'c':
         {
             vector<MatrixXd> v = getSampleEigen();
             cout << "Received:\n"
                  << v[0] << endl;
+            break;
         }
-        break;
+        case 'd':
+        {
+            vector<MatrixXd> v = captureAllCorners();
+            if (v.size() > 0)
+                cout << v[0] << endl;
+            break;
+        }
+        default:
+        {
+            cout << "Invalid input" << endl;
+            break;
+        }
         }
     }
 
