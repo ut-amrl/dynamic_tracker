@@ -48,13 +48,21 @@ void captureAllCorners(int sockfd, vector<shared_ptr<KinectWrapper>> &kinects)
     }
 }
 
-void captureImages(int sockfd, vector<shared_ptr<KinectWrapper>> &kinects)
+void captureImages(int sockfd, vector<shared_ptr<KinectWrapper>> &kinects, bool markCorners)
 {
     // Mat image;
     // image = imread("/home/henry/Desktop/1593827043.jpg", CV_LOAD_IMAGE_COLOR);
     for (shared_ptr<KinectWrapper> kinect : kinects)
     {
         Mat image = kinect->capture();
+        if (markCorners)
+        {
+            Mat convert;
+            cvtColor(image, convert, CV_BGRA2BGR);
+            Mat detections;
+            MatrixXd camPoints;
+            detectFrameCorners(s, convert, detections, camPoints)
+        }
         sendCV(sockfd, image);
     }
 }
@@ -106,12 +114,12 @@ int main(int argc, char *argv[])
         case 'a':
         {
             //captureAllCorners(sockfd, kinects);
-            captureImages(sockfd, kinects);
+            captureImages(sockfd, kinects, true);
             break;
         }
         case 'b':
         {
-            captureImages(sockfd, kinects);
+            captureImages(sockfd, kinects, false);
             break;
         }
         case 'c':

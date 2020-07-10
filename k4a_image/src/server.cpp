@@ -124,8 +124,8 @@ int main(int argc, char *argv[])
         cout << "---------------------------" << endl;
         cout << "Reading from the keyboard" << endl;
         cout << "---------------------------" << endl;
-        cout << "a: capture images from all cameras WITH approval ('f' to reject, any other key to accept)" << endl;
-        cout << "b: capture images from all cameras WITHOUT approval" << endl;
+        cout << "a: capture images from all cameras with marked corners" << endl;
+        cout << "b: capture images from all cameras without marked corners" << endl;
         cout << "c: try sample eigen data" << endl;
         cout << "d: none" << endl;
         cout << "CTRL-C to quit" << endl;
@@ -146,7 +146,7 @@ int main(int argc, char *argv[])
         {
         case 'a':
         {
-            getCaptureImages(true);
+            getCaptureImages(false);
             break;
         }
         case 'b':

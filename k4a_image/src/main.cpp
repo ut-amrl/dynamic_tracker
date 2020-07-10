@@ -42,7 +42,7 @@ int main()
   cout << chessboardPoints << endl;
 
   vector<string> files = listFiles(
-      "/home/henry/dynamic_tracker/k4a_image/captures/");
+      "../captures/");
   vector<Mat> images = loadImages(files);
   vector<Mat> detections;
   cout << "loadImages:  " << images.size() << endl;
