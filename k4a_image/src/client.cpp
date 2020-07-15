@@ -57,11 +57,12 @@ void captureImages(int sockfd, vector<shared_ptr<KinectWrapper>> &kinects, bool 
         Mat image = kinect->capture();
         if (markCorners)
         {
+            cv::Size s(CBOARD_ROWS, CBOARD_COLS);
             Mat convert;
             cvtColor(image, convert, CV_BGRA2BGR);
             Mat detections;
             MatrixXd camPoints;
-            detectFrameCorners(s, convert, detections, camPoints)
+            detectFrameCorners(s, convert, detections, camPoints);
         }
         sendCV(sockfd, image);
     }
