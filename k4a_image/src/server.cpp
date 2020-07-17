@@ -59,7 +59,6 @@ vector<MatrixXd> captureAllCorners()
 
 void getCaptureImages(bool ask)
 {
-    cout << (ask ? "Reading images from clients WITH approval" : "Reading images from clients WITHOUT approval") << endl;
     // Create directory for images
     int set = std::time(nullptr);
     std::stringstream dir;
@@ -78,17 +77,17 @@ void getCaptureImages(bool ask)
             readCV(client.fd, image);
             std::stringstream name;
             name << "client_" << clientNum << "_cam_" << i;
-            if (ask)
-            {
-                Mat small = scale(image, 4);
-                imshow(name.str(), small);
-                char c = waitKey(0);
-                destroyAllWindows();
-                if (c == 'f')
-                {
-                    approval = 'n';
-                }
-            }
+            // if (ask)
+            // {
+            //     Mat small = scale(image, 4);
+            //     imshow(name.str(), small);
+            //     char c = waitKey(0);
+            //     destroyAllWindows();
+            //     if (c == 'f')
+            //     {
+            //         approval = 'n';
+            //     }
+            // }
             name << "_" << approval << ".jpg ";
             cout << "capturing " << name.str() << endl;
             imwrite(dir.str() + name.str(), image);
