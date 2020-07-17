@@ -1,0 +1,10 @@
+#ifndef KINECT_SERVER_CONFIG_H
+#define KINECT_SERVER_CONFIG_H
+
+#define IP "192.168.1.242"
+#define PORT 12345
+#define NUM_CLIENTS 1
+#define CBOARD_ROWS 6
+#define CBOARD_COLS 4
+
+#endif
