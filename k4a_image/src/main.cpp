@@ -1,3 +1,4 @@
+#include "KFRDisplay.h"
 #include "KinectWrapper.h"
 #include <iostream>
 #include <ctime>
@@ -31,9 +32,11 @@ Mat scale(Mat in, double scaleFactor)
 
 int main()
 {
-  // KinectWrapper kinectWrapper(0);
-  // kinectWrapper.display();
+  KFRDisplay  kfrDisplay;
+  KinectWrapper kinectWrapper(0, kfrDisplay);
+  kinectWrapper.display();
 
+  /*
   Size s(6, 4);
   ModelChessboard chessboard(s.height, s.width, 23.0);
 
@@ -85,6 +88,7 @@ int main()
   imshow("Rectified", rectified);
 
   waitKey(0);
+  */
 
   // cv::VideoCapture cap("/home/henry/Downloads/chessboard.mkv");
   // while(true){
