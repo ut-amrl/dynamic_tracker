@@ -12,6 +12,7 @@ message(STATUS ${CMAKE_SOURCE_DIR})
 add_executable(k4a_image
     src/KinectWrapper.cpp
     src/main.cpp
+    src/KFRDisplay.cpp
 )
 
 add_executable(server
@@ -21,6 +22,7 @@ add_executable(server
 add_executable(client
     src/client.cpp
     src/KinectWrapper.cpp
+    src/KFRDisplay.cpp
 )
 
 add_library(sockets SHARED src/sockets.cpp)

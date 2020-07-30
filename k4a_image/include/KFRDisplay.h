@@ -3,8 +3,11 @@
 
 #include "KinectFrameRecipient.h"
 
-class KFRDisplay : public KinectFrameRecipient {
+class KFRDisplay : public KinectFrameRecipient
+{
 public:
+    KFRDisplay();
+    ~KFRDisplay();
     void receiveFrame(cv::Mat &colorMat);
 };
 
