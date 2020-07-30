@@ -7,7 +7,8 @@
 using namespace std;
 using namespace cv;
 
-KinectWrapper::KinectWrapper(uint8_t deviceIndex) : _device(NULL)
+KinectWrapper::KinectWrapper(uint8_t deviceIndex, KinectFrameRecipient &kfr) :
+    _device(NULL), _kfr(kfr)
 {
     if (K4A_RESULT_SUCCEEDED != k4a_device_open(deviceIndex, &_device))
     {
@@ -43,7 +44,7 @@ KinectWrapper::~KinectWrapper()
     k4a_device_close(_device);
 }
 
-Mat KinectWrapper::capture(bool display)
+Mat KinectWrapper::capture()
 {
     Mat res;
     k4a_capture_t capture = NULL;
@@ -58,12 +59,7 @@ Mat KinectWrapper::capture(bool display)
         uint8_t *buffer = k4a_image_get_buffer(image);
         // opencv matrix
         cv::Mat colorMat = cv::Mat(rows, cols, CV_8UC4, (void *)buffer, cv::Mat::AUTO_STEP).clone();
-        if (display)
-        {
-            cv::imshow("Image", colorMat);
-            int wait = cv::waitKey(0);
-            printf("res:%4dx%4d\n", rows, cols);
-        }
+        _kfr.receiveFrame(colorMat);
         k4a_image_release(image);
         k4a_capture_release(capture);
         res = colorMat;
