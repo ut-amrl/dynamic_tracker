@@ -4,6 +4,7 @@ project(k4a_image)
 find_package(Ceres REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(Eigen3 REQUIRED)
+find_package(octomap REQUIRED)
 
 find_library(VISION_GEOMETRY_LIBRARY vision_geometry HINTS ${CMAKE_SOURCE_DIR}/share/vision_geometry/build/)
 
@@ -22,8 +23,10 @@ add_executable(server
 add_executable(client
     src/client.cpp
     src/KinectWrapper.cpp
-    src/KFRDisplay.cpp
+    src/KFRDisplay.cpp    
 )
+
+add_executable(test_octomap src/test_octomap.cpp) 
 
 add_library(sockets SHARED src/sockets.cpp)
 
@@ -33,6 +36,7 @@ include_directories(
     ${Ceres_INCLUDE_DIR}
     ${EIGEN3_INCLUDE_DIR}
 	/usr/include/eigen3
+	/home/knapsack/software/octomap/octomap/include/
 )
 
 target_link_libraries(sockets
@@ -42,6 +46,8 @@ target_link_libraries(sockets
     k4arecord
 )
 
+link_libraries(${OCTOMAP_LIBRARIES})
+
 # Dependencies of this library
 target_link_libraries(k4a_image
     ${Ceres_LIBS}
@@ -50,6 +56,13 @@ target_link_libraries(k4a_image
     ceres
     k4a
     k4arecord
+)
+
+target_link_libraries(test_octomap
+    ${OpenCV_LIBS} 
+    k4a
+    k4arecord
+    ${OCTOMAP_LIBRARIES}
 )
 
 # Dependencies of this library
@@ -67,3 +80,5 @@ target_link_libraries(client
 target_link_libraries(server
     sockets
 )
+
+ 
