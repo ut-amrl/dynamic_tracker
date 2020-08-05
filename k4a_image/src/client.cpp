@@ -19,6 +19,7 @@
 #include <vision_geometry/HomCartShortcuts.h>
 #include <sockets.h>
 #include <config.h>
+#include "KFRDisplay.h"
 
 using namespace cv;
 using namespace Eigen;
@@ -82,9 +83,10 @@ int main(int argc, char *argv[])
 {
     int sockfd = initClientSocket();
     vector<shared_ptr<KinectWrapper>> kinects;
+    KFRDisplay kfrDisplay;
     for (int i = 0; i < k4a_device_get_installed_count(); i++)
     {
-        kinects.push_back(make_shared<KinectWrapper>(i));
+        kinects.push_back(make_shared<KinectWrapper>(i, kfrDisplay));
     }
 
     if (sockfd == -1)
