@@ -25,6 +25,11 @@ add_executable(client
     src/KFRDisplay.cpp
 )
 
+add_executable(calib
+    src/calib.cpp
+    src/KinectCalibrator.cpp
+)
+
 add_library(sockets SHARED src/sockets.cpp)
 
 include_directories(
@@ -66,4 +71,13 @@ target_link_libraries(client
 # Dependencies of this library
 target_link_libraries(server
     sockets
+)
+
+target_link_libraries(calib
+    ${Ceres_LIBS}
+    ${OpenCV_LIBS} 
+	${VISION_GEOMETRY_LIBRARY}
+    ceres
+    k4a
+    k4arecord
 )

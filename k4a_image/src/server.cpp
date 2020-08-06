@@ -77,17 +77,6 @@ void getCaptureImages(bool ask)
             readCV(client.fd, image);
             std::stringstream name;
             name << "client_" << clientNum << "_cam_" << i;
-            // if (ask)
-            // {
-            //     Mat small = scale(image, 4);
-            //     imshow(name.str(), small);
-            //     char c = waitKey(0);
-            //     destroyAllWindows();
-            //     if (c == 'f')
-            //     {
-            //         approval = 'n';
-            //     }
-            // }
             name << "_" << approval << ".jpg ";
             cout << "capturing " << name.str() << endl;
             imwrite(dir.str() + name.str(), image);
