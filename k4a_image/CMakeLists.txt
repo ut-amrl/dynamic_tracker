@@ -26,8 +26,12 @@ add_executable(client
     src/KFRDisplay.cpp    
 )
 
-add_executable(test_octomap src/test_octomap.cpp) 
-
+add_executable(test_octomap 
+	test/test_octomap.cpp 
+	src/KinectWrapper.cpp
+	src/KFRDisplay.cpp
+    
+	)
 add_library(sockets SHARED src/sockets.cpp)
 
 include_directories(

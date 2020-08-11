@@ -16,6 +16,8 @@ public:
 
     cv::Mat capture();
     void display();
+    k4a_image_t captureDepth();
+    k4a_calibration_t calibration;
 
 protected:
     k4a_device_t _device;

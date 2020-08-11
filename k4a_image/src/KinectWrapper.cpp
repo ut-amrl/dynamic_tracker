@@ -15,8 +15,7 @@ KinectWrapper::KinectWrapper(uint8_t deviceIndex, KinectFrameRecipient &kfr) :
         cout << "aborting" << endl;
         abort();
     }
-    k4a_calibration_t calibration;
-    k4a_device_get_calibration(_device, K4A_DEPTH_MODE_NFOV_UNBINNED, K4A_COLOR_RESOLUTION_2160P, &calibration);
+    k4a_device_get_calibration(_device, K4A_DEPTH_MODE_WFOV_2X2BINNED, K4A_COLOR_RESOLUTION_2160P, &calibration);
     // cout << "found " << calibration.color_camera_calibration.intrinsics.parameter_count << " intrinsic params" << endl;
     // cout << "cx: " << calibration.color_camera_calibration.intrinsics.parameters.param.cx << endl;
     // cout << "cy: " << calibration.color_camera_calibration.intrinsics.parameters.param.cy << endl;
@@ -27,7 +26,7 @@ KinectWrapper::KinectWrapper(uint8_t deviceIndex, KinectFrameRecipient &kfr) :
     config.camera_fps = K4A_FRAMES_PER_SECOND_30;
     config.color_format = K4A_IMAGE_FORMAT_COLOR_BGRA32;
     config.color_resolution = K4A_COLOR_RESOLUTION_2160P;
-    config.depth_mode = K4A_DEPTH_MODE_NFOV_UNBINNED;
+    config.depth_mode = K4A_DEPTH_MODE_WFOV_2X2BINNED; //config.depth_mode =  K4A_DEPTH_MODE_NFOV_UNBINNED;
     config.synchronized_images_only = true;
 
     // try to start cameras
@@ -75,6 +74,39 @@ Mat KinectWrapper::capture()
         break;
     }
     return res;
+}
+
+k4a_image_t KinectWrapper::captureDepth()
+{
+    k4a_capture_t capture = NULL;
+    k4a_image_t depth_image;
+    switch (k4a_device_get_capture(_device, &capture, K4A_WAIT_INFINITE))
+    {
+    case K4A_WAIT_RESULT_SUCCEEDED:
+    {
+        depth_image = k4a_capture_get_depth_image(capture);
+        // int rows = k4a_image_get_height_pixels(depth_image);
+        // int cols = k4a_image_get_width_pixels(depth_image);
+        // // image buffer
+        // uint8_t *buffer = k4a_image_get_buffer(depth_image);
+        // // opencv matrix
+        // cv::Mat colorMat = cv::Mat(rows, cols, CV_8UC4, (void *)buffer, cv::Mat::AUTO_STEP).clone();
+        // _kfr.receiveFrame(colorMat);
+        // k4a_image_release(depth_image);
+        // k4a_capture_release(capture);
+        // res = colorMat;
+        break;
+    }
+    case K4A_WAIT_RESULT_TIMEOUT:
+        printf("Timed out waiting for a capture\n");
+        k4a_device_close(_device);
+        break;
+    case K4A_WAIT_RESULT_FAILED:
+        printf("Failed to read a capture\n");
+        k4a_device_close(_device);
+        break;
+    }
+    return depth_image;
 }
 
 void KinectWrapper::display()
