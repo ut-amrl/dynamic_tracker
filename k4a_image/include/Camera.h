@@ -7,7 +7,7 @@
 using namespace Eigen;
 
 struct Camera {
-    Camera() {};
+
     std::map<int, MatrixXd> projections;
     int index;
 };

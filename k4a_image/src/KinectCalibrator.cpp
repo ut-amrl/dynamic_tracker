@@ -169,6 +169,8 @@ void KinectCalibrator::globalOpt(vector<Camera> cams, vector<MatrixXd> camRTs, v
             new EigenQuaternionParameterization(), new IdentityParameterization(3));
         problem.SetParameterization(param, se3_param);
     }
+    // Set cam 0 to be fixed
+    problem.SetParameterBlockConstant(camRTs.at(0).data());
 
     Solver::Options options;
     options.linear_solver_type = ceres::DENSE_QR;
@@ -180,3 +182,86 @@ void KinectCalibrator::globalOpt(vector<Camera> cams, vector<MatrixXd> camRTs, v
     cout << summary.BriefReport() << endl;
 }
 
+vector<MatrixXd> KinectCalibrator::genRTs(int minX, int minY, int minZ, int maxX, int maxY, int maxZ, int n)
+{
+    vector<MatrixXd> ret;
+    for (int i = 0; i < n; i++) {
+        double x = randZeroToOne() * (maxX - minX) + minX;
+        double y = randZeroToOne() * (maxY - minY) + minY;
+        double z = randZeroToOne() * (maxZ - minZ) + minZ;
+        Matrix3d r;
+        double xr = (0.5 * randZeroToOne() - 0.25) * M_PI;
+        double yr = (0.5 * randZeroToOne() - 0.25) * M_PI;
+        double zr = (0.5 * randZeroToOne() - 0.25) * M_PI;
+        r = AngleAxisd(xr, Vector3d::UnitX()) * AngleAxisd(yr, Vector3d::UnitY()) * AngleAxisd(zr, Vector3d::UnitZ());
+
+        MatrixXd res(4, 4);
+        res.block(0, 0, 3, 3) = r;
+        res(0, 3) = x;
+        res(1, 3) = y;
+        res(2, 3) = z;
+        res(3, 3) = 1;
+
+        res(3, 0) = 0;
+        res(3, 1) = 0;
+        res(3, 2) = 0;
+        ret.push_back(res);
+    }
+    return ret;
+}
+
+void KinectCalibrator::test()
+{
+    int numCams = 4;
+    int numBoards = 2;
+    // Goal- optimize n-1 cameras' pose w.r.t cam 0
+    //       (and also m chessboards' pose)
+    vector<MatrixXd> camRTs;
+    vector<MatrixXd> boardRTs;
+    // Generate numCams cameras lined up each 1 unit away from each other
+    for (int i = 0; i < numCams; i++) {
+        MatrixXd m(3, 4);
+        m << 1, 0, 0, i,
+            0, 1, 0, 0,
+            0, 0, 1, 0;
+        camRTs.push_back(m);
+    }
+    // Create numBoards chessboards, each randomly transformed
+    vector<MatrixXd> randomRT = genRTs(-10, -10, 5, 10, 10, 10, numBoards);
+    for (int i = 0; i < numBoards; i++) {
+        boardRTs.push_back(randomRT[i]);
+    }
+
+    vector<Camera> cams;
+    for (int i = 0; i < numCams; i++) {
+        map<int, MatrixXd> projections;
+        vector<int> visibleBoards;
+        switch (i) {
+        case 0:
+            visibleBoards.push_back(0);
+            break;
+        case 1:
+            visibleBoards.push_back(0);
+            visibleBoards.push_back(1);
+            break;
+        case 2:
+            visibleBoards.push_back(0);
+            visibleBoards.push_back(1);
+            break;
+        case 3:
+            visibleBoards.push_back(1);
+            break;
+        default:
+            cout << "uncaught case" << endl;
+            return;
+            break;
+        }
+        for(int board: visibleBoards){
+            projections[board] = intrinsics.getMat() * camRTs[i] * boardRTs[board].inverse() * chessboard.getModelCBH3D(); 
+        }
+
+
+        Camera cam = { projections, i };
+        cams.push_back(cam);
+    }
+}

@@ -7,5 +7,5 @@ CameraIntrinsics k(1,1,0,1,1);
 int main(){
     KinectCalibrator kc("/home/henry/Desktop/images/", k);
     //kc.select();
-    kc.solve();
+    kc.test();
 }

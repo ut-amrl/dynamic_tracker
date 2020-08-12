@@ -16,7 +16,9 @@ public:
     void select();
     void solve();
     void globalOpt(std::vector<Camera> cams, std::vector<Eigen::MatrixXd> camRTs, std::vector<Eigen::MatrixXd> objRTs);
-
+    // Testing functions
+    std::vector<Eigen::MatrixXd> genRTs(int minX, int minY, int minZ, int maxX, int maxY, int maxZ, int n);
+    void test();
 protected:
     std::vector<std::string> imgSets;
     CameraIntrinsics intrinsics;
