@@ -77,6 +77,7 @@ target_link_libraries(calib
     ${Ceres_LIBS}
     ${OpenCV_LIBS} 
 	${VISION_GEOMETRY_LIBRARY}
+    ${Eigen3_LIBS}
     ceres
     k4a
     k4arecord
