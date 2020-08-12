@@ -70,6 +70,7 @@ public:
             T(intrinsics_(1, 0)), T(intrinsics_(1, 1)), T(intrinsics_(1, 2)),
             T(intrinsics_(2, 0)), T(intrinsics_(2, 1)), T(intrinsics_(2, 2));
 
+        // Reproject points based on parameters for camera and object transforms
         Eigen::Matrix<T, 3, 1> res = intrinsics * camRT * objRT.inverse() * worldPoint;
 
         res /= res[2];

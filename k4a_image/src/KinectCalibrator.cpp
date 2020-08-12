@@ -16,8 +16,8 @@ using namespace Eigen;
 using namespace ceres;
 
 KinectCalibrator::KinectCalibrator(std::string path, CameraIntrinsics k)
-    : intrinsics(k)
-    , chessboard(1, 1, 1.0)
+    : intrinsics(k), intrinsicsMat(k.getMat())
+    , chessboard(4, 6, 23.0)
 {
     imgSets = listFiles(path);
     sort(imgSets.begin(), imgSets.end());
@@ -140,6 +140,9 @@ void KinectCalibrator::globalOpt(vector<Camera>& cams, vector<MatrixXd>& camRTs,
     if (cams.size() != camRTs.size()) {
     }
     Problem problem;
+
+    vector<ceres::ResidualBlockId> to_eval;
+
     // Iterate through cameras and all the image points they each see
     for (Camera cam : cams) {
         for (auto x : cam.projections) {
@@ -150,14 +153,10 @@ void KinectCalibrator::globalOpt(vector<Camera>& cams, vector<MatrixXd>& camRTs,
             }
             for (int i = 0; i < imgPts.cols(); i++) {
 
-                CostFunction* cost = new AutoDiffCostFunction<GlobalRTCostFunctor, 2, 7, 7>(new GlobalRTCostFunctor(intrinsics.getMat(), imgPts.col(i), worldPts.col(i)));
+                CostFunction* cost = new AutoDiffCostFunction<GlobalRTCostFunctor, 2, 7, 7>(new GlobalRTCostFunctor(intrinsicsMat, imgPts.col(i), worldPts.col(i)));
                 // Param 1: camN to cam0 Param2: objN to cam0
-                problem.AddResidualBlock(cost, NULL, camRTs.at(cam.index).data(), objRTs.at(x.first).data());
-
-                // // We are argmining w.r.t an SE(3) element
-                // ProductParameterization* se3_param = new ProductParameterization(
-                //     new EigenQuaternionParameterization(), new IdentityParameterization(3));
-                // problem.SetParameterization(se3data.data(), se3_param);
+                ResidualBlockId r_id = problem.AddResidualBlock(cost, NULL, camRTs.at(cam.index).data(), objRTs.at(x.first).data());
+                to_eval.push_back(r_id);
             }
         }
     }
@@ -173,14 +172,28 @@ void KinectCalibrator::globalOpt(vector<Camera>& cams, vector<MatrixXd>& camRTs,
     // Set cam 0 to be fixed
     problem.SetParameterBlockConstant(camRTs.at(0).data());
 
+    ceres::Problem::EvaluateOptions options2;
+    options2.residual_blocks = to_eval;
+    double total_cost = 0.0;
+    vector<double> evaluated_residuals;
+    // problem.Evaluate(options2, &total_cost, &evaluated_residuals, nullptr, nullptr);
+    // for (auto i = 0; i < evaluated_residuals.size(); i++) {
+    //     cout << i << ": " << evaluated_residuals[i] << endl;
+    // }
+    // cout << "Total cost: " << total_cost << endl;
+    
     Solver::Options options;
     options.linear_solver_type = ceres::DENSE_QR;
-    options.use_explicit_schur_complement = true;
+    // options.function_tolerance = 1e-16;
+    // options.parameter_tolerance = 1e-9;
+    // options.max_num_iterations = 1000;
+    // options.use_explicit_schur_complement = true;
     options.minimizer_progress_to_stdout = false;
     Solver::Summary summary;
     ceres::Solve(options, &problem, &summary);
 
     cout << summary.BriefReport() << endl;
+
 }
 
 vector<MatrixXd> KinectCalibrator::genRTs(int minX, int minY, int minZ, int maxX, int maxY, int maxZ, int n)
@@ -268,13 +281,73 @@ void KinectCalibrator::test()
 
     vector<MatrixXd> estCamRTs;
     vector<MatrixXd> estObjRTs;
+    for (int i = 0; i < numCams; i++) {
+        //cout << camRTs[i] << endl;
+        VectorXd v(7);
+        v(0) = 0;
+        v(1) = 0;
+        v(2) = 0;
+        v(3) = 1;
+        v(4) = 0;
+        v(5) = 0;
+        v(6) = 0;
+        estCamRTs.push_back(v);
+    }
+    for (int i = 0; i < numBoards; i++) {
+        RigidTrans rt(rotVect(boardRTs[i].block(0, 0, 3, 3)), boardRTs[i].block(0, 3, 3, 1));
+        // cout << rt.getTransVect() << endl;
+        // cout << " " << endl;
+        Quaterniond q(rt.getRotationMat());
+        VectorXd v(7);
+        v(0) = q.x();
+        v(1) = q.y();
+        v(2) = q.z();
+        v(3) = q.w();
+        v(4) = rt.getTransVect()(0);
+        v(5) = rt.getTransVect()(1);
+        v(6) = rt.getTransVect()(2);
+        // v(0) = 0;
+        // v(1) = 0;
+        // v(2) = 0;
+        // v(3) = 1;
+        // v(4) = 0;
+        // v(5) = 0;
+        // v(6) = 1;
+        estObjRTs.push_back(v);
+    }
+
+    // MatrixXd imgPts = cams[0].projections[0];
+    // MatrixXd worldPts = chessboard.getModelCBH3D();
+    // GlobalRTCostFunctor testCost(intrinsics.getMat(), imgPts.col(0), worldPts.col(0));
+    // Vector2d res;
+    // testCost(estCamRTs[0].data(), estObjRTs[0].data(), res.data());
+    // cout << "(" << res(0) << ", " << res(1) << ")" << endl;
+    // cout << "Image point: (" << imgPts(0,0) << ", " << imgPts(1,0) << ")"<< endl;
+
     globalOpt(cams, estCamRTs, estObjRTs);
 
-    // cout << "Boards" << endl;
-    // for(auto board: boardRTs){
-    //     cout << board << endl;
-    // }
-    // cout << "end boards" << endl;
+    for (int i = 0; i < numCams; i++) {
+        VectorXd v = estCamRTs[i];
+        Quaterniond rotation_opt(v[3], v[0], v[1],
+            v[2]);
+        Vector3d translation_opt(v[4], v[5], v[6]);
+        RigidTrans rt(rotVect(rotation_opt.toRotationMatrix()), translation_opt);
+        cout << rt.getIdealProjection() << endl;
+    }
+
+    for (int i = 0; i < numBoards; i++) {
+        VectorXd v = estObjRTs[i];
+        Quaterniond rotation_opt(v[3], v[0], v[1],
+            v[2]);
+        Vector3d translation_opt(v[4], v[5], v[6]);
+        RigidTrans rt (positiveBoundedRotVect(rotVect(rotation_opt.toRotationMatrix())), translation_opt);
+        cout << rt.getIdealProjection() << endl;
+    }
+    cout << "Boards" << endl;
+    for(auto board: boardRTs){
+        cout << board << endl;
+    }
+    cout << "end boards" << endl;
 
     // for(int i = 0 ; i < numCams; i++){
     //     cout << "Camera " << i << endl;

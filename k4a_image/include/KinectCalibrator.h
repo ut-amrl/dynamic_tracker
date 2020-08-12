@@ -23,6 +23,7 @@ protected:
     std::vector<std::string> imgSets;
     CameraIntrinsics intrinsics;
     ModelChessboard chessboard;
+    Eigen::Matrix3d intrinsicsMat;
 };
 
 #endif
