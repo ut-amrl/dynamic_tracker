@@ -4,6 +4,7 @@
 #include <ceres/ceres.h>
 #include <opencv2/opencv.hpp>
 #include <stdio.h>
+#include <vision_geometry/HomCartShortcuts.h>
 #include <vision_geometry/HomographyShortcuts.h>
 #include <vision_geometry/RigidTrans.h>
 #include <vision_geometry/TransformShortcuts.h>
@@ -16,7 +17,7 @@ using namespace ceres;
 
 KinectCalibrator::KinectCalibrator(std::string path, CameraIntrinsics k)
     : intrinsics(k)
-    , chessboard(4, 6, 23.0)
+    , chessboard(1, 1, 1.0)
 {
     imgSets = listFiles(path);
     sort(imgSets.begin(), imgSets.end());
@@ -134,7 +135,7 @@ void KinectCalibrator::solve()
     }
 }
 
-void KinectCalibrator::globalOpt(vector<Camera> cams, vector<MatrixXd> camRTs, vector<MatrixXd> objRTs)
+void KinectCalibrator::globalOpt(vector<Camera>& cams, vector<MatrixXd>& camRTs, vector<MatrixXd>& objRTs)
 {
     if (cams.size() != camRTs.size()) {
     }
@@ -143,8 +144,7 @@ void KinectCalibrator::globalOpt(vector<Camera> cams, vector<MatrixXd> camRTs, v
     for (Camera cam : cams) {
         for (auto x : cam.projections) {
             MatrixXd imgPts = x.second;
-            MatrixXd worldPts = chessboard.getModelCBH2D();
-
+            MatrixXd worldPts = chessboard.getModelCBH3D();
             if (imgPts.cols() != worldPts.cols()) {
                 cout << "Error: mismatch in mapping from world to img points" << endl;
             }
@@ -161,6 +161,7 @@ void KinectCalibrator::globalOpt(vector<Camera> cams, vector<MatrixXd> camRTs, v
             }
         }
     }
+
     vector<double*> params;
     problem.GetParameterBlocks(&params);
     // Set local parameterizations
@@ -232,6 +233,7 @@ void KinectCalibrator::test()
         boardRTs.push_back(randomRT[i]);
     }
 
+    // Populate cameras with images
     vector<Camera> cams;
     for (int i = 0; i < numCams; i++) {
         map<int, MatrixXd> projections;
@@ -256,12 +258,28 @@ void KinectCalibrator::test()
             return;
             break;
         }
-        for(int board: visibleBoards){
-            projections[board] = intrinsics.getMat() * camRTs[i] * boardRTs[board].inverse() * chessboard.getModelCBH3D(); 
+        for (int board : visibleBoards) {
+            projections[board] = divideByLastRowRemoveLastRow(intrinsics.getMat() * camRTs[i] * boardRTs[board].inverse() * chessboard.getModelCBH3D());
         }
-
 
         Camera cam = { projections, i };
         cams.push_back(cam);
     }
+
+    vector<MatrixXd> estCamRTs;
+    vector<MatrixXd> estObjRTs;
+    globalOpt(cams, estCamRTs, estObjRTs);
+
+    // cout << "Boards" << endl;
+    // for(auto board: boardRTs){
+    //     cout << board << endl;
+    // }
+    // cout << "end boards" << endl;
+
+    // for(int i = 0 ; i < numCams; i++){
+    //     cout << "Camera " << i << endl;
+    //     for(auto projection: cams[i].projections){
+    //         cout << "   " << projection.first << ": (" << projection.second(0,0) << ", " << projection.second(1,0) << ")" <<  endl;
+    //     }
+    // }
 }
