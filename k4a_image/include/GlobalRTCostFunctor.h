@@ -70,9 +70,10 @@ public:
             T(intrinsics_(1, 0)), T(intrinsics_(1, 1)), T(intrinsics_(1, 2)),
             T(intrinsics_(2, 0)), T(intrinsics_(2, 1)), T(intrinsics_(2, 2));
 
-        Eigen::Matrix<T, 3, 1> res = intrinsics * camRT * objRT.inverse()  * worldPoint;
+        Eigen::Matrix<T, 3, 1> res = intrinsics * camRT * objRT.inverse() * worldPoint;
 
-        residuals /= residuals[2];
+        res /= res[2];
+
         residuals[0] = res[0] - T(x_image);
         residuals[1] = res[1] - T(y_image);
 
