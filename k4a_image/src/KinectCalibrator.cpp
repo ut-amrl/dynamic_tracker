@@ -9,6 +9,7 @@
 #include <vision_geometry/RigidTrans.h>
 #include <vision_geometry/TransformShortcuts.h>
 #include <vision_geometry/Util.h>
+#include <random>
 
 using namespace std;
 using namespace cv;
@@ -16,8 +17,9 @@ using namespace Eigen;
 using namespace ceres;
 
 KinectCalibrator::KinectCalibrator(std::string path, CameraIntrinsics k)
-    : intrinsics(k), intrinsicsMat(k.getMat())
-    , chessboard(4, 6, 23.0)
+    : intrinsics(k)
+    , intrinsicsMat(k.getMat())
+    , chessboard(2, 2, 23.0)
 {
     imgSets = listFiles(path);
     sort(imgSets.begin(), imgSets.end());
@@ -172,28 +174,29 @@ void KinectCalibrator::globalOpt(vector<Camera>& cams, vector<MatrixXd>& camRTs,
     // Set cam 0 to be fixed
     problem.SetParameterBlockConstant(camRTs.at(0).data());
 
-    ceres::Problem::EvaluateOptions options2;
-    options2.residual_blocks = to_eval;
-    double total_cost = 0.0;
-    vector<double> evaluated_residuals;
-    // problem.Evaluate(options2, &total_cost, &evaluated_residuals, nullptr, nullptr);
-    // for (auto i = 0; i < evaluated_residuals.size(); i++) {
-    //     cout << i << ": " << evaluated_residuals[i] << endl;
-    // }
-    // cout << "Total cost: " << total_cost << endl;
-    
     Solver::Options options;
     options.linear_solver_type = ceres::DENSE_QR;
-    // options.function_tolerance = 1e-16;
-    // options.parameter_tolerance = 1e-9;
-    // options.max_num_iterations = 1000;
-    // options.use_explicit_schur_complement = true;
+    //options.linear_solver_type = DENSE_NORMAL_CHOLESKY;
+    options.function_tolerance = 1e-16;
+    options.parameter_tolerance = 1e-16;
+    options.max_num_iterations = 1000;
+    options.use_explicit_schur_complement = true;
     options.minimizer_progress_to_stdout = false;
+
     Solver::Summary summary;
     ceres::Solve(options, &problem, &summary);
 
     cout << summary.BriefReport() << endl;
 
+    ceres::Problem::EvaluateOptions options2;
+    options2.residual_blocks = to_eval;
+    double total_cost = 0.0;
+    vector<double> evaluated_residuals;
+    problem.Evaluate(options2, &total_cost, &evaluated_residuals, nullptr, nullptr);
+    // for (auto i = 0; i < evaluated_residuals.size(); i++) {
+    //     cout << i << ": " << evaluated_residuals[i] << endl;
+    // }
+    // cout << "Total cost: " << total_cost << endl;
 }
 
 vector<MatrixXd> KinectCalibrator::genRTs(int minX, int minY, int minZ, int maxX, int maxY, int maxZ, int n)
@@ -246,7 +249,12 @@ void KinectCalibrator::test()
         boardRTs.push_back(randomRT[i]);
     }
 
-    // Populate cameras with images
+    const double mean = 0.0;
+    const double stddev = 5;
+    std::default_random_engine generator;
+    std::normal_distribution<double> dist(mean, stddev);
+
+    // Populate cameras with images with noise
     vector<Camera> cams;
     for (int i = 0; i < numCams; i++) {
         map<int, MatrixXd> projections;
@@ -273,6 +281,9 @@ void KinectCalibrator::test()
         }
         for (int board : visibleBoards) {
             projections[board] = divideByLastRowRemoveLastRow(intrinsics.getMat() * camRTs[i] * boardRTs[board].inverse() * chessboard.getModelCBH3D());
+            for(int r = 0; r < projections[board].rows(); r++)
+                for(int c = 0; c < projections[board].cols(); c++)
+                    projections[board](r,c) += dist(generator);
         }
 
         Camera cam = { projections, i };
@@ -295,24 +306,22 @@ void KinectCalibrator::test()
     }
     for (int i = 0; i < numBoards; i++) {
         RigidTrans rt(rotVect(boardRTs[i].block(0, 0, 3, 3)), boardRTs[i].block(0, 3, 3, 1));
-        // cout << rt.getTransVect() << endl;
-        // cout << " " << endl;
         Quaterniond q(rt.getRotationMat());
         VectorXd v(7);
-        v(0) = q.x();
-        v(1) = q.y();
-        v(2) = q.z();
-        v(3) = q.w();
-        v(4) = rt.getTransVect()(0);
-        v(5) = rt.getTransVect()(1);
-        v(6) = rt.getTransVect()(2);
-        // v(0) = 0;
-        // v(1) = 0;
-        // v(2) = 0;
-        // v(3) = 1;
-        // v(4) = 0;
-        // v(5) = 0;
-        // v(6) = 1;
+        // v(0) = q.x();
+        // v(1) = q.y();
+        // v(2) = q.z();
+        // v(3) = q.w();
+        // v(4) = rt.getTransVect()(0) + 1;
+        // v(5) = rt.getTransVect()(1) + 1;
+        // v(6) = rt.getTransVect()(2) + 1;
+        v(0) = 0;
+        v(1) = 0;
+        v(2) = 0;
+        v(3) = 1;
+        v(4) = 0;
+        v(5) = 0;
+        v(6) = 1;
         estObjRTs.push_back(v);
     }
 
@@ -335,19 +344,19 @@ void KinectCalibrator::test()
         cout << rt.getIdealProjection() << endl;
     }
 
-    for (int i = 0; i < numBoards; i++) {
-        VectorXd v = estObjRTs[i];
-        Quaterniond rotation_opt(v[3], v[0], v[1],
-            v[2]);
-        Vector3d translation_opt(v[4], v[5], v[6]);
-        RigidTrans rt (positiveBoundedRotVect(rotVect(rotation_opt.toRotationMatrix())), translation_opt);
-        cout << rt.getIdealProjection() << endl;
-    }
-    cout << "Boards" << endl;
-    for(auto board: boardRTs){
-        cout << board << endl;
-    }
-    cout << "end boards" << endl;
+    // for (int i = 0; i < numBoards; i++) {
+    //     VectorXd v = estObjRTs[i];
+    //     Quaterniond rotation_opt(v[3], v[0], v[1],
+    //         v[2]);
+    //     Vector3d translation_opt(v[4], v[5], v[6]);
+    //     RigidTrans rt (positiveBoundedRotVect(rotVect(rotation_opt.toRotationMatrix())), translation_opt);
+    //     cout << rt.getIdealProjection() << endl;
+    // }
+    // cout << "Boards" << endl;
+    // for(auto board: boardRTs){
+    //     cout << board << endl;
+    // }
+    // cout << "end boards" << endl;
 
     // for(int i = 0 ; i < numCams; i++){
     //     cout << "Camera " << i << endl;
