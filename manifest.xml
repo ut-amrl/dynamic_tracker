@@ -16,6 +16,10 @@
   <depend package="roscpp"/>
   <depend package="rosbag"/>
   <depend package="tf"/>
+  <depend package="grid_map_core"/>
+  <depend package="grid_map_octomap"/>
+  <depend package="grid_map_msgs"/>
+  <depend package="grid_map_ros"/>
 </package>
 
 
