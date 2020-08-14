@@ -31,7 +31,8 @@ void captureAllCorners(int sockfd, vector<shared_ptr<KinectWrapper>> &kinects)
     for (shared_ptr<KinectWrapper> kinect : kinects)
     {
         cv::Size s(CBOARD_ROWS, CBOARD_COLS);
-        Mat image = kinect->capture();
+        Mat image;// = kinect->capture();
+        abort();//Sorry! This will need to be fixed. Look at KinectDisplay for a reference on how to do this the new way.
         // Kinect outputs BGRA so we need to convert to BGR for findChessboardCorners
         Mat convert;
         cvtColor(image, convert, CV_BGRA2BGR);
@@ -55,7 +56,8 @@ void captureImages(int sockfd, vector<shared_ptr<KinectWrapper>> &kinects, bool 
     // image = imread("/home/henry/Desktop/1593827043.jpg", CV_LOAD_IMAGE_COLOR);
     for (shared_ptr<KinectWrapper> kinect : kinects)
     {
-        Mat image = kinect->capture();
+        Mat image;// = kinect->capture();
+        abort();//Sorry! This will need to be fixed. Look at KinectDisplay for a reference on how to do this the new way.
         if (markCorners)
         {
             cv::Size s(CBOARD_ROWS, CBOARD_COLS);
@@ -83,7 +85,7 @@ int main(int argc, char *argv[])
 {
     int sockfd = initClientSocket();
     vector<shared_ptr<KinectWrapper>> kinects;
-    KFRDisplay kfrDisplay;
+    KFRDisplay kfrDisplay(2160, 3840);
     for (int i = 0; i < k4a_device_get_installed_count(); i++)
     {
         kinects.push_back(make_shared<KinectWrapper>(i, kfrDisplay));

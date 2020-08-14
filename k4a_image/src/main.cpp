@@ -32,9 +32,9 @@ Mat scale(Mat in, double scaleFactor)
 
 int main()
 {
-  KFRDisplay  kfrDisplay;
+  KFRDisplay kfrDisplay(2160, 3840);
   KinectWrapper kinectWrapper(0, kfrDisplay);
-  kinectWrapper.display();
+  while(true) kinectWrapper.capture();
 
   /*
   Size s(6, 4);

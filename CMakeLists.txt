@@ -25,6 +25,10 @@ FIND_PACKAGE(octomap REQUIRED)
 FIND_PACKAGE(OpenCV REQUIRED)
 INCLUDE_DIRECTORIES(${OpenCV_INCLUDE_DIRS})
 
+# FIND_PACKAGE(PCL REQUIRED QUIET COMPONENTS common filters)
+# INCLUDE_DIRECTORIES(${pcl_INCLUDE_DIRS})
+
+
 
 INCLUDE($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 ROSBUILD_INIT()
@@ -37,7 +41,7 @@ MESSAGE(STATUS "CXX Flags: ${CMAKE_CXX_FLAGS}")
 SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 SET(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
-SET(libs roslib roscpp rosbag glog gflags lua5.1 # amrl-shared-lib
+SET(libs roslib roscpp rosbag glog gflags lua5.1 # libpcl # amrl-shared-lib
     pthread)
 
 ADD_SUBDIRECTORY(k4a_image/share/vision_geometry)
@@ -49,6 +53,10 @@ INCLUDE_DIRECTORIES(/home/knapsack/workspaces/unitree_ws/src/grid_map/grid_map_c
 INCLUDE_DIRECTORIES(/home/knapsack/workspaces/unitree_ws/src/grid_map/grid_map_octomap/include)
 INCLUDE_DIRECTORIES(/home/knapsack/workspaces/unitree_ws/src/grid_map/grid_map_msgs/include)
 INCLUDE_DIRECTORIES(/home/knapsack/workspaces/unitree_ws/src/grid_map/grid_map_ros/include)
+# INCLUDE_DIRECTORIES(/usr/include/pcl-1.8/pcl)
+# INCLUDE_DIRECTORIES(/usr/include/pcl-1.8/pcl/filters/)
+# INCLUDE_DIRECTORIES(/usr/include/pcl-1.8/pcl/common/)
+
 
 MESSAGE(STATUS "Includes: ${INCLUDE_DIRECTORIES}")
 

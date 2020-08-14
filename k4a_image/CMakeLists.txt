@@ -10,10 +10,15 @@ find_library(VISION_GEOMETRY_LIBRARY vision_geometry HINTS ${CMAKE_SOURCE_DIR}/s
 
 message(STATUS ${CMAKE_SOURCE_DIR})
 
-add_executable(k4a_image
+SET(KINECT_WRAPPER_SOURCES
     src/KinectWrapper.cpp
-    src/main.cpp
     src/KFRDisplay.cpp
+    src/KFRBodyTracker.cpp
+)
+
+add_executable(k4a_image
+    src/main.cpp
+    ${KINECT_WRAPPER_SOURCES}
 )
 
 add_executable(server
@@ -32,6 +37,11 @@ add_executable(test_octomap
 	src/KFRDisplay.cpp
     
 	)
+add_executable(calib
+    src/calib.cpp
+    src/KinectCalibrator.cpp
+)
+
 add_library(sockets SHARED src/sockets.cpp)
 
 include_directories(
@@ -59,6 +69,7 @@ target_link_libraries(k4a_image
 	${VISION_GEOMETRY_LIBRARY}
     ceres
     k4a
+    k4abt
     k4arecord
 )
 
@@ -85,4 +96,16 @@ target_link_libraries(server
     sockets
 )
 
+<<<<<<< HEAD
  
+=======
+target_link_libraries(calib
+    ${Ceres_LIBS}
+    ${OpenCV_LIBS} 
+	${VISION_GEOMETRY_LIBRARY}
+    ${Eigen3_LIBS}
+    ceres
+    k4a
+    k4arecord
+)
+>>>>>>> 94de9e0e2e1c3785a8da617edc986d0f70b3d3b7

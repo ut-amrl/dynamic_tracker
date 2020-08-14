@@ -37,6 +37,11 @@
 #include <unistd.h>
 #include <iostream>
 #include <memory>
+// PCL
+// #include <pcl/filters/filter.h>
+// #include <pcl/point_cloud.h>
+// #include <pcl/common/distances.h>
+// #include <pcl/common/common.h>
 
 using namespace octomap;
 using namespace std;
@@ -190,15 +195,13 @@ int main(int argc, char **argv){
 	      
 	        // Fill ocotomap::Pointcloud
 	        for(int j = 0; j < width*height; ++j){
-	        	float x_, y_, z_; x_ = point_cloud_data[j].xyz.x; y_ = point_cloud_data[j].xyz.y; z_ = point_cloud_data[j].xyz.z;
-	        	point3d point(x_, y_, z_);
+	        	point3d point(point_cloud_data[j].xyz.x, point_cloud_data[j].xyz.y, point_cloud_data[j].xyz.z);
 	            octocloud->push_back(point);   
 	        }
 	        cout << "s1" << endl;
 	        // Insert Pointcloud to OcTree
-	        tree.insertPointCloud(*octocloud, frame_origin.trans());
+	        tree.insertPointCloud(*octocloud, origin);
 	        cout << "s2" << endl;
-	        // Clear octomap::Pointcloud
 	    	
 	    	// Convert tree -> gridmap
 	    	bool res = GridMapOctomapConverter::fromOctomap(tree, "elevation", *gridMap);
