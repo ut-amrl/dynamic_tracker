@@ -9,10 +9,15 @@ find_library(VISION_GEOMETRY_LIBRARY vision_geometry HINTS ${CMAKE_SOURCE_DIR}/s
 
 message(STATUS ${CMAKE_SOURCE_DIR})
 
-add_executable(k4a_image
+SET(KINECT_WRAPPER_SOURCES
     src/KinectWrapper.cpp
-    src/main.cpp
     src/KFRDisplay.cpp
+    src/KFRBodyTracker.cpp
+)
+
+add_executable(k4a_image
+    src/main.cpp
+    ${KINECT_WRAPPER_SOURCES}
 )
 
 add_executable(server
@@ -54,6 +59,7 @@ target_link_libraries(k4a_image
 	${VISION_GEOMETRY_LIBRARY}
     ceres
     k4a
+    k4abt
     k4arecord
 )
 
