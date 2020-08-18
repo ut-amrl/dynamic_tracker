@@ -48,7 +48,7 @@ ADD_SUBDIRECTORY(k4a_image/share/vision_geometry)
 INCLUDE_DIRECTORIES(k4a_image/share/vision_geometry)
 INCLUDE_DIRECTORIES(k4a_image)
 INCLUDE_DIRECTORIES(k4a_image/include)
-INCLUDE_DIRECTORIES(/home/knapsack/software/octomap/octomap/include/)
+# INCLUDE_DIRECTORIES(/home/knapsack/software/octomap/octomap/include/)
 INCLUDE_DIRECTORIES(/home/knapsack/workspaces/unitree_ws/src/grid_map/grid_map_core/include)
 INCLUDE_DIRECTORIES(/home/knapsack/workspaces/unitree_ws/src/grid_map/grid_map_octomap/include)
 INCLUDE_DIRECTORIES(/home/knapsack/workspaces/unitree_ws/src/grid_map/grid_map_msgs/include)
@@ -60,7 +60,7 @@ INCLUDE_DIRECTORIES(/home/knapsack/workspaces/unitree_ws/src/grid_map/grid_map_r
 
 MESSAGE(STATUS "Includes: ${INCLUDE_DIRECTORIES}")
 
-LINK_LIBRARIES(${OCTOMAP_LIBRARIES})
+# LINK_LIBRARIES(${OCTOMAP_LIBRARIES})
 
 FIND_LIBRARY(VISION_GEOMETRY_LIBRARY vision_geometry HINTS ${CMAKE_SOURCE_DIR}/share/vision_geometry/build/)
 
@@ -70,32 +70,49 @@ install(TARGETS k4a_utils
     PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 
-ROSBUILD_ADD_EXECUTABLE(test_octomap
-                        k4a_image/test/test_octomap.cpp
+ROSBUILD_ADD_EXECUTABLE( ak2ros
+						k4a_image/src/ak2ros.cpp
+                        k4a_image/src/KFR2Grid.cpp
                         k4a_image/src/KinectWrapper.cpp
-						k4a_image/src/KFRDisplay.cpp)
-TARGET_LINK_LIBRARIES(test_octomap 
-	${libs} 
-	${OpenCV_LIBS} 
-    k4a
-    k4arecord
-    ${OCTOMAP_LIBRARIES}
-)
-
-ROSBUILD_ADD_EXECUTABLE(kinect_to_gridmap
-                        k4a_image/src/kinect_to_gridmap.cpp
-                        k4a_image/src/KinectWrapper.cpp
-						k4a_image/src/KFRDisplay.cpp
+						# k4a_image/src/K4ACaptureRecipient.cpp
 						k4a_image/src/utils/k4a_utils.cpp
 						)
-TARGET_LINK_LIBRARIES(kinect_to_gridmap 
+TARGET_LINK_LIBRARIES(ak2ros 
 	${libs} 
 	${OpenCV_LIBS} 
     k4a
     k4arecord
     k4a_utils
-    ${OCTOMAP_LIBRARIES}
 )
+
+
+
+# ROSBUILD_ADD_EXECUTABLE(test_octomap
+#                         k4a_image/test/test_octomap.cpp
+#                         k4a_image/src/KinectWrapper.cpp
+# 						k4a_image/src/KFRDisplay.cpp)
+# TARGET_LINK_LIBRARIES(test_octomap 
+# 	${libs} 
+# 	${OpenCV_LIBS} 
+#     k4a
+#     k4arecord
+#     ${OCTOMAP_LIBRARIES}
+# )
+
+# ROSBUILD_ADD_EXECUTABLE(kinect_to_gridmap
+#                         k4a_image/src/kinect_to_gridmap.cpp
+#                         k4a_image/src/KinectWrapper.cpp
+# 						k4a_image/src/KFRDisplay.cpp
+# 						k4a_image/src/utils/k4a_utils.cpp
+# 						)
+# TARGET_LINK_LIBRARIES(kinect_to_gridmap 
+# 	${libs} 
+# 	${OpenCV_LIBS} 
+#     k4a
+#     k4arecord
+#     k4a_utils
+#     ${OCTOMAP_LIBRARIES}
+# )
 
 
 # ROSBUILD_ADD_EXECUTABLE(ekf_tracker

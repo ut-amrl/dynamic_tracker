@@ -15,31 +15,16 @@ KinectWrapper::KinectWrapper(uint8_t deviceIndex, K4ACaptureRecipient &kfr) :
         cout << "aborting" << endl;
         abort();
     }
-<<<<<<< HEAD
-    k4a_device_get_calibration(_device, K4A_DEPTH_MODE_WFOV_2X2BINNED, K4A_COLOR_RESOLUTION_2160P, &calibration);
-=======
-    k4a_device_get_calibration(_device, K4A_DEPTH_MODE_NFOV_UNBINNED, K4A_COLOR_RESOLUTION_2160P, &_calibration);
->>>>>>> 94de9e0e2e1c3785a8da617edc986d0f70b3d3b7
-    // cout << "found " << calibration.color_camera_calibration.intrinsics.parameter_count << " intrinsic params" << endl;
-    // cout << "cx: " << calibration.color_camera_calibration.intrinsics.parameters.param.cx << endl;
-    // cout << "cy: " << calibration.color_camera_calibration.intrinsics.parameters.param.cy << endl;
-    // cout << "fx: " << calibration.color_camera_calibration.intrinsics.parameters.param.fx << endl;
-    // cout << "fy: " << calibration.color_camera_calibration.intrinsics.parameters.param.fy << endl;
 
-<<<<<<< HEAD
+    k4a_device_get_calibration(_device, K4A_DEPTH_MODE_WFOV_2X2BINNED, K4A_COLOR_RESOLUTION_2160P, &calibration);
+
     k4a_device_configuration_t config = K4A_DEVICE_CONFIG_INIT_DISABLE_ALL;
     config.camera_fps = K4A_FRAMES_PER_SECOND_30;
     config.color_format = K4A_IMAGE_FORMAT_COLOR_BGRA32;
     config.color_resolution = K4A_COLOR_RESOLUTION_2160P;
     config.depth_mode = K4A_DEPTH_MODE_WFOV_2X2BINNED; //config.depth_mode =  K4A_DEPTH_MODE_NFOV_UNBINNED;
     config.synchronized_images_only = true;
-=======
-    _config.camera_fps = K4A_FRAMES_PER_SECOND_30;
-    _config.color_format = K4A_IMAGE_FORMAT_COLOR_BGRA32;
-    _config.color_resolution = K4A_COLOR_RESOLUTION_2160P;
-    _config.depth_mode = K4A_DEPTH_MODE_NFOV_UNBINNED;
-    _config.synchronized_images_only = true;
->>>>>>> 94de9e0e2e1c3785a8da617edc986d0f70b3d3b7
+
 
     // try to start cameras
     if (K4A_RESULT_SUCCEEDED != k4a_device_start_cameras(_device, &_config))
@@ -87,7 +72,6 @@ void KinectWrapper::capture()
     }
 }
 
-<<<<<<< HEAD
 k4a_image_t KinectWrapper::captureDepth()
 {
     k4a_capture_t capture = NULL;
@@ -121,9 +105,7 @@ k4a_image_t KinectWrapper::captureDepth()
     return depth_image;
 }
 
-=======
 /*
->>>>>>> 94de9e0e2e1c3785a8da617edc986d0f70b3d3b7
 void KinectWrapper::display()
 {
     k4a_capture_t capture = NULL;
@@ -176,4 +158,3 @@ void KinectWrapper::display()
 <<<<<<< HEAD
 =======
 */
->>>>>>> 94de9e0e2e1c3785a8da617edc986d0f70b3d3b7
