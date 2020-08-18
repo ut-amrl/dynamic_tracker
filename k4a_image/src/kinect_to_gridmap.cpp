@@ -120,108 +120,108 @@ static void create_xy_table(const k4a_calibration_t *calibration, k4a_image_t xy
 
 int main(int argc, char **argv){
 
-	// Vector of KinectWrappers
-    vector<shared_ptr<KinectWrapper>> kinects;
-    KFRDisplay kfrDisplay;
-    // Vars for grabbing point_cloud_data from each of 3 Kinects
-    vector< k4a_image_t > depth_images;
-    k4a_image_t tmp;
-    k4a_image_t xy_table = NULL;
-    k4a_image_t point_cloud = NULL;
-    int point_count = 0;
-    // Octomap Vars
-    Pointcloud* octocloud= new Pointcloud();
-    OcTree tree(0.1);
-    point3d origin(0.01f, 0.01f, 0.01f);
-    pose6d frame_origin(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
-    // Gridmap Vars
-    GridMap *gridMap;
+	// // Vector of KinectWrappers
+ //    vector<shared_ptr<KinectWrapper>> kinects;
+ //    KFRDisplay kfrDisplay;
+ //    // Vars for grabbing point_cloud_data from each of 3 Kinects
+ //    vector< k4a_image_t > depth_images;
+ //    k4a_image_t tmp;
+ //    k4a_image_t xy_table = NULL;
+ //    k4a_image_t point_cloud = NULL;
+ //    int point_count = 0;
+ //    // Octomap Vars
+ //    Pointcloud* octocloud= new Pointcloud();
+ //    OcTree tree(0.1);
+ //    point3d origin(0.01f, 0.01f, 0.01f);
+ //    pose6d frame_origin(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+ //    // Gridmap Vars
+ //    GridMap *gridMap;
 
-    // ROS
-    ros::init(argc, argv, "kinect_to_gridmap", ros::init_options::NoSigintHandler);
-    ros::NodeHandle n;
+ //    // ROS
+ //    ros::init(argc, argv, "kinect_to_gridmap", ros::init_options::NoSigintHandler);
+ //    ros::NodeHandle n;
 
-    ros::Rate loop_rate(100);
+ //    ros::Rate loop_rate(100);
 
-    ros::Publisher gmap_pub = n.advertise< grid_map_msgs::GridMapList >("/gridmap_raw", 1000);
-    grid_map_msgs::GridMapList gmap_msg;
-    grid_map_msgs::GridMap temp_gmap;
+ //    ros::Publisher gmap_pub = n.advertise< grid_map_msgs::GridMapList >("/gridmap_raw", 1000);
+ //    grid_map_msgs::GridMapList gmap_msg;
+ //    grid_map_msgs::GridMap temp_gmap;
 
-    // Fill kinects
-    for (int i = 0; i < k4a_device_get_installed_count(); i++)
-    {
-        kinects.push_back(make_shared<KinectWrapper>(i, kfrDisplay));
-    }
-    // Initialize pointcloud structures
-    k4a_image_create(K4A_IMAGE_FORMAT_CUSTOM,
-                     kinects[0]->calibration.depth_camera_calibration.resolution_width,
-                     kinects[0]->calibration.depth_camera_calibration.resolution_height,
-                     kinects[0]->calibration.depth_camera_calibration.resolution_width * (int)sizeof(k4a_float2_t),
-                     &xy_table);
+ //    // Fill kinects
+ //    for (int i = 0; i < k4a_device_get_installed_count(); i++)
+ //    {
+ //        kinects.push_back(make_shared<KinectWrapper>(i, kfrDisplay));
+ //    }
+ //    // Initialize pointcloud structures
+ //    k4a_image_create(K4A_IMAGE_FORMAT_CUSTOM,
+ //                     kinects[0]->calibration.depth_camera_calibration.resolution_width,
+ //                     kinects[0]->calibration.depth_camera_calibration.resolution_height,
+ //                     kinects[0]->calibration.depth_camera_calibration.resolution_width * (int)sizeof(k4a_float2_t),
+ //                     &xy_table);
 
-    k4a_image_create(K4A_IMAGE_FORMAT_CUSTOM,
-                 kinects[0]->calibration.depth_camera_calibration.resolution_width,
-                 kinects[0]->calibration.depth_camera_calibration.resolution_height,
-                 kinects[0]->calibration.depth_camera_calibration.resolution_width * (int)sizeof(k4a_float3_t),
-                 &point_cloud);
+ //    k4a_image_create(K4A_IMAGE_FORMAT_CUSTOM,
+ //                 kinects[0]->calibration.depth_camera_calibration.resolution_width,
+ //                 kinects[0]->calibration.depth_camera_calibration.resolution_height,
+ //                 kinects[0]->calibration.depth_camera_calibration.resolution_width * (int)sizeof(k4a_float3_t),
+ //                 &point_cloud);
 
-    create_xy_table(&kinects[0]->calibration, xy_table);
+ //    create_xy_table(&kinects[0]->calibration, xy_table);
 
-    while(ros::ok()){
-        ros::spinOnce();
+ //    while(ros::ok()){
+ //        ros::spinOnce();
 
-	    for (int i = 0; i < k4a_device_get_installed_count(); i++)
-	    {
-	    	// Capture Depth image for each kinect
-	        tmp = kinects[i]->captureDepth();
-	        depth_images.push_back(tmp);
-	        // Create pointcloud
-	        generate_point_cloud(depth_images[i], xy_table, point_cloud, &point_count);
-	        // Get the Pointcloud data from pool
-	        k4a_float3_t *point_cloud_data = (k4a_float3_t *)(void *)k4a_image_get_buffer(point_cloud);
-	        int width = k4a_image_get_width_pixels(point_cloud);
-	        int height = k4a_image_get_height_pixels(point_cloud);
-	        for(int j = 0; j < width*height; ++j){
-	        	if( isnan(point_cloud_data[j].xyz.x) ){
-		      		point_cloud_data[j].xyz.x = 0.;
-		      	}
-		      	if( isnan(point_cloud_data[j].xyz.y) ){
-		      		point_cloud_data[j].xyz.y = 0.;
-		      	}
-		      	if( isnan(point_cloud_data[j].xyz.z) ){
-		      		point_cloud_data[j].xyz.z = 0.;
-		      	}
-	      	}
+	//     for (int i = 0; i < k4a_device_get_installed_count(); i++)
+	//     {
+	//     	// Capture Depth image for each kinect
+	//         tmp = kinects[i]->captureDepth();
+	//         depth_images.push_back(tmp);
+	//         // Create pointcloud
+	//         generate_point_cloud(depth_images[i], xy_table, point_cloud, &point_count);
+	//         // Get the Pointcloud data from pool
+	//         k4a_float3_t *point_cloud_data = (k4a_float3_t *)(void *)k4a_image_get_buffer(point_cloud);
+	//         int width = k4a_image_get_width_pixels(point_cloud);
+	//         int height = k4a_image_get_height_pixels(point_cloud);
+	//         for(int j = 0; j < width*height; ++j){
+	//         	if( isnan(point_cloud_data[j].xyz.x) ){
+	// 	      		point_cloud_data[j].xyz.x = 0.;
+	// 	      	}
+	// 	      	if( isnan(point_cloud_data[j].xyz.y) ){
+	// 	      		point_cloud_data[j].xyz.y = 0.;
+	// 	      	}
+	// 	      	if( isnan(point_cloud_data[j].xyz.z) ){
+	// 	      		point_cloud_data[j].xyz.z = 0.;
+	// 	      	}
+	//       	}
 	      
-	        // Fill ocotomap::Pointcloud
-	        for(int j = 0; j < width*height; ++j){
-	        	point3d point(point_cloud_data[j].xyz.x, point_cloud_data[j].xyz.y, point_cloud_data[j].xyz.z);
-	            octocloud->push_back(point);   
-	        }
-	        cout << "s1" << endl;
-	        // Insert Pointcloud to OcTree
-	        tree.insertPointCloud(*octocloud, origin);
-	        cout << "s2" << endl;
+	//         // Fill ocotomap::Pointcloud
+	//         for(int j = 0; j < width*height; ++j){
+	//         	point3d point(point_cloud_data[j].xyz.x, point_cloud_data[j].xyz.y, point_cloud_data[j].xyz.z);
+	//             octocloud->push_back(point);   
+	//         }
+	//         cout << "s1" << endl;
+	//         // Insert Pointcloud to OcTree
+	//         tree.insertPointCloud(*octocloud, origin);
+	//         cout << "s2" << endl;
 	    	
-	    	// Convert tree -> gridmap
-	    	bool res = GridMapOctomapConverter::fromOctomap(tree, "elevation", *gridMap);
-	    	// Clear OcTree 
-    		tree.clear();
-    		octocloud->clear();
+	//     	// Convert tree -> gridmap
+	//     	bool res = GridMapOctomapConverter::fromOctomap(tree, "elevation", *gridMap);
+	//     	// Clear OcTree 
+ //    		tree.clear();
+ //    		octocloud->clear();
 	    	
-	    	// GridMap* gridMap -> grid_map_msgs::GridMap temp_gmap
-	    	GridMapRosConverter::toMessage(*gridMap, temp_gmap);
-	  		// Fill GridMapList
-	    	gmap_msg.list[i] = temp_gmap;
+	//     	// GridMap* gridMap -> grid_map_msgs::GridMap temp_gmap
+	//     	GridMapRosConverter::toMessage(*gridMap, temp_gmap);
+	//   		// Fill GridMapList
+	//     	gmap_msg.list[i] = temp_gmap;
 
-	    }
+	//     }
 
 	    
-        // Publish to ROS
-        gmap_pub.publish(gmap_msg);
+ //        // Publish to ROS
+ //        gmap_pub.publish(gmap_msg);
 
-        loop_rate.sleep();
-    }
+ //        loop_rate.sleep();
+ //    }
 
 
 

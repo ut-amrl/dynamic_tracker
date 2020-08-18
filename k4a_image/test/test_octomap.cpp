@@ -110,85 +110,85 @@ static void create_xy_table(const k4a_calibration_t *calibration, k4a_image_t xy
 
 int main(int argc, char **argv){
 
-    // Array of Kinect Wrappers
-    vector<shared_ptr<KinectWrapper>> kinects;
-    KFRDisplay kfrDisplay;
-    // Array of cv::Mat results from get_depth
-    vector<k4a_image_t> depth_images;
-    k4a_image_t tmp;
-    k4a_image_t xy_table = NULL;
-    k4a_image_t point_cloud = NULL;
-    int point_count = 0;
-    // Octomap Vars
-    Pointcloud* octocloud= new Pointcloud();
-    OcTree tree(0.1);
-    point3d origin(0.01f, 0.01f, 0.01f);
+    // // Array of Kinect Wrappers
+    // vector<shared_ptr<KinectWrapper>> kinects;
+    // KFRDisplay kfrDisplay;
+    // // Array of cv::Mat results from get_depth
+    // vector<k4a_image_t> depth_images;
+    // k4a_image_t tmp;
+    // k4a_image_t xy_table = NULL;
+    // k4a_image_t point_cloud = NULL;
+    // int point_count = 0;
+    // // Octomap Vars
+    // Pointcloud* octocloud= new Pointcloud();
+    // OcTree tree(0.1);
+    // point3d origin(0.01f, 0.01f, 0.01f);
 
-    // Fill kinects
-    for (int i = 0; i < k4a_device_get_installed_count(); i++)
-    {
-        kinects.push_back(make_shared<KinectWrapper>(i, kfrDisplay));
-    }
+    // // Fill kinects
+    // for (int i = 0; i < k4a_device_get_installed_count(); i++)
+    // {
+    //     kinects.push_back(make_shared<KinectWrapper>(i, kfrDisplay));
+    // }
 
-    k4a_image_create(K4A_IMAGE_FORMAT_CUSTOM,
-                     kinects[0]->calibration.depth_camera_calibration.resolution_width,
-                     kinects[0]->calibration.depth_camera_calibration.resolution_height,
-                     kinects[0]->calibration.depth_camera_calibration.resolution_width * (int)sizeof(k4a_float2_t),
-                     &xy_table);
+    // k4a_image_create(K4A_IMAGE_FORMAT_CUSTOM,
+    //                  kinects[0]->calibration.depth_camera_calibration.resolution_width,
+    //                  kinects[0]->calibration.depth_camera_calibration.resolution_height,
+    //                  kinects[0]->calibration.depth_camera_calibration.resolution_width * (int)sizeof(k4a_float2_t),
+    //                  &xy_table);
 
-    create_xy_table(&kinects[0]->calibration, xy_table);
+    // create_xy_table(&kinects[0]->calibration, xy_table);
 
-    k4a_image_create(K4A_IMAGE_FORMAT_CUSTOM,
-                 kinects[0]->calibration.depth_camera_calibration.resolution_width,
-                 kinects[0]->calibration.depth_camera_calibration.resolution_height,
-                 kinects[0]->calibration.depth_camera_calibration.resolution_width * (int)sizeof(k4a_float3_t),
-                 &point_cloud);
+    // k4a_image_create(K4A_IMAGE_FORMAT_CUSTOM,
+    //              kinects[0]->calibration.depth_camera_calibration.resolution_width,
+    //              kinects[0]->calibration.depth_camera_calibration.resolution_height,
+    //              kinects[0]->calibration.depth_camera_calibration.resolution_width * (int)sizeof(k4a_float3_t),
+    //              &point_cloud);
 
-    // Capture Depth image for each kinect
-    for (int i = 0; i < k4a_device_get_installed_count(); i++)
-    {
-        tmp = kinects[i]->captureDepth();
-        depth_images.push_back(tmp);
-        // Create pointcloud
-        generate_point_cloud(depth_images[i], xy_table, point_cloud, &point_count);
-        // Get the data
-        k4a_float3_t *point_cloud_data = (k4a_float3_t *)(void *)k4a_image_get_buffer(point_cloud);
-        int width = k4a_image_get_width_pixels(point_cloud);
-        int height = k4a_image_get_height_pixels(point_cloud);
-        for(int j = 0; j < width*height; ++j){
-            // Fill ocotomap::Pointcloud
-            octocloud->push_back(point_cloud_data[j].xyz.x, point_cloud_data[j].xyz.y, point_cloud_data[j].xyz.z);   
-        }
-        cout << "Octomap Pointcloud" << endl;
-        // cout << octocloud << endl;
-        tree.insertPointCloud(*octocloud, origin);
-    }
+    // // Capture Depth image for each kinect
+    // for (int i = 0; i < k4a_device_get_installed_count(); i++)
+    // {
+    //     tmp = kinects[i]->captureDepth();
+    //     depth_images.push_back(tmp);
+    //     // Create pointcloud
+    //     generate_point_cloud(depth_images[i], xy_table, point_cloud, &point_count);
+    //     // Get the data
+    //     k4a_float3_t *point_cloud_data = (k4a_float3_t *)(void *)k4a_image_get_buffer(point_cloud);
+    //     int width = k4a_image_get_width_pixels(point_cloud);
+    //     int height = k4a_image_get_height_pixels(point_cloud);
+    //     for(int j = 0; j < width*height; ++j){
+    //         // Fill ocotomap::Pointcloud
+    //         octocloud->push_back(point_cloud_data[j].xyz.x, point_cloud_data[j].xyz.y, point_cloud_data[j].xyz.z);   
+    //     }
+    //     cout << "Octomap Pointcloud" << endl;
+    //     // cout << octocloud << endl;
+    //     tree.insertPointCloud(*octocloud, origin);
+    // }
 
-    // I think at this point I have included that pointcloud as an OcTreeNode?
-    // Need to figure this relationship out of how do i get OcTreeNodes
-        // from an OcTreeNode I can use method: getOccupancy() to obtain the occupancy probability of a node
+    // // I think at this point I have included that pointcloud as an OcTreeNode?
+    // // Need to figure this relationship out of how do i get OcTreeNodes
+    //     // from an OcTreeNode I can use method: getOccupancy() to obtain the occupancy probability of a node
 
 
     
-    //Do stuff with OcTree tree
-    for(Pointcloud::iterator it = octocloud->begin(); it != octocloud->end(); it++){
-    	float x, y, z;
-        x = (*it)(0);
-        y = (*it)(1);
-        z = (*it)(2);
+    // //Do stuff with OcTree tree
+    // for(Pointcloud::iterator it = octocloud->begin(); it != octocloud->end(); it++){
+    // 	float x, y, z;
+    //     x = (*it)(0);
+    //     y = (*it)(1);
+    //     z = (*it)(2);
       
-    }
+    // }
 
-    // ros::init(argc, argv, "octomap_to_gridmap", ros::init_options::NoSigintHandler);
-    // ros::NodeHandle ros_node;
+    // // ros::init(argc, argv, "octomap_to_gridmap", ros::init_options::NoSigintHandler);
+    // // ros::NodeHandle ros_node;
 
-    // Convert to grid map.
-    GridMap gridMap;    
-    bool res = GridMapOctomapConverter::fromOctomap(tree, "elevation", gridMap);
+    // // Convert to grid map.
+    // GridMap gridMap;    
+    // bool res = GridMapOctomapConverter::fromOctomap(tree, "elevation", gridMap);
 
 
-    octocloud->clear();
-    tree.clear();
+    // octocloud->clear();
+    // tree.clear();
 
     
 	
