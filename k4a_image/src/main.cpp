@@ -34,7 +34,8 @@ int main()
 {
   KFRDisplay kfrDisplay(2160, 3840);
   KinectWrapper kinectWrapper(0, kfrDisplay);
-  while(true) kinectWrapper.capture();
+  kinectWrapper.capture();
+  //while(kinectWrapper.capture()) {}
 
   /*
   Size s(6, 4);

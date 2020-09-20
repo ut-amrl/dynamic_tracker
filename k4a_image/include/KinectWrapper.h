@@ -14,7 +14,7 @@ public:
     KinectWrapper(uint8_t deviceIndex, K4ACaptureRecipient &kfr);
     ~KinectWrapper();
 
-    void capture();
+    bool capture();
     //void display();
 
 protected:

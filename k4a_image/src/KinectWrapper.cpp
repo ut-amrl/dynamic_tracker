@@ -42,7 +42,7 @@ KinectWrapper::~KinectWrapper()
     k4a_device_close(_device);
 }
 
-void KinectWrapper::capture()
+bool KinectWrapper::capture()
 {
     Mat res;
     k4a_capture_t capture = NULL;
@@ -50,18 +50,9 @@ void KinectWrapper::capture()
     {
     case K4A_WAIT_RESULT_SUCCEEDED:
     {
-        /*
-        _kf.image = k4a_capture_get_color_image(capture);
-        int rows = k4a_image_get_height_pixels(_kf.image);
-        int cols = k4a_image_get_width_pixels(_kf.image);
-        // image buffer
-        uint8_t *buffer = k4a_image_get_buffer(_kf.image);
-        // opencv matrix
-        cv::Mat colorMat = cv::Mat(rows, cols, CV_8UC4, (void *)buffer, cv::Mat::AUTO_STEP).clone();
-        */
         _kfr.receiveFrame(capture);
         k4a_capture_release	(capture);
-        break;
+        return true;
     }
     case K4A_WAIT_RESULT_TIMEOUT:
         printf("Timed out waiting for a capture\n");
@@ -72,56 +63,5 @@ void KinectWrapper::capture()
         k4a_device_close(_device);
         break;
     }
+    return false;
 }
-
-/*
-void KinectWrapper::display()
-{
-    k4a_capture_t capture = NULL;
-    k4a_wait_result_t result = K4A_WAIT_RESULT_SUCCEEDED;
-    bool exit = false;
-    while (result == K4A_WAIT_RESULT_SUCCEEDED && !exit)
-    {
-        result = k4a_device_get_capture(_device, &capture, K4A_WAIT_INFINITE);
-        switch (result)
-        {
-        case K4A_WAIT_RESULT_SUCCEEDED:
-        {
-            k4a_image_t image = k4a_capture_get_color_image(capture);
-            int rows = k4a_image_get_height_pixels(image);
-            int cols = k4a_image_get_width_pixels(image);
-            // opencv matrix
-            cv::Mat colorMat(rows, cols, CV_8UC4, (void *)k4a_image_get_buffer(image), cv::Mat::AUTO_STEP);
-            cv::imshow("Image", colorMat);
-            char c = (char)cv::waitKey(25);
-
-            // Press ESC to cancel, space to capture
-            if (c == 27)
-            {
-                exit = true;
-            }
-            else if (c == ' ')
-            {
-                std::stringstream name;
-                name << std::time(nullptr) << ".jpg";
-                cout << "capturing " << name.str() << endl;
-                imwrite("../captures/" + name.str(), colorMat);
-            }
-            // printf("res:%4dx%4d\n", rows, cols);
-            k4a_image_release(image);
-            k4a_capture_release(capture);
-
-            break;
-        }
-        case K4A_WAIT_RESULT_TIMEOUT:
-            printf("Timed out waiting for a capture\n");
-            k4a_device_close(_device);
-            break;
-        case K4A_WAIT_RESULT_FAILED:
-            printf("Failed to read a capture\n");
-            k4a_device_close(_device);
-            break;
-        }
-    }
-}
-*/

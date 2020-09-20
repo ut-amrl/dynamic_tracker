@@ -13,6 +13,7 @@ SET(KINECT_WRAPPER_SOURCES
     src/KinectWrapper.cpp
     src/KFRDisplay.cpp
     src/KFRBodyTracker.cpp
+    src/conversions.cpp
 )
 
 add_executable(k4a_image
@@ -28,11 +29,15 @@ add_executable(client
     src/client.cpp
     src/KinectWrapper.cpp
     src/KFRDisplay.cpp
+    src/conversions.cpp
 )
 
 add_executable(calib
     src/calib.cpp
+    src/conversions.cpp
     src/KinectCalibrator.cpp
+    src/KinectWrapper.cpp
+    src/KFRCalibration.cpp
 )
 
 add_library(sockets SHARED src/sockets.cpp)
