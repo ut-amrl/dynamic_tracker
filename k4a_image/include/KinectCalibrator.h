@@ -19,10 +19,11 @@ public:
     // Testing functions
     std::vector<Eigen::MatrixXd> genRTs(int minX, int minY, int minZ, int maxX, int maxY, int maxZ, int n);
     void test();
+
+    ModelChessboard chessboard; // TODO make this protected later
 protected:
     std::vector<std::string> imgSets;
     CameraIntrinsics intrinsics;
-    ModelChessboard chessboard;
     Eigen::Matrix3d intrinsicsMat;
 };
 
