@@ -2,6 +2,8 @@
 #include "conversions.h"
 #include <vector>
 
+#include "vision_geometry/CVUtil.h"
+
 using namespace cv;
 
 KFRCalibration::KFRCalibration(int chessboardRows, int chessboardColumns):

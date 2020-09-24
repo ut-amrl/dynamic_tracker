@@ -181,7 +181,7 @@ void KinectCalibrator::globalOpt(vector<Camera>& cams, vector<MatrixXd>& camRTs,
     options.parameter_tolerance = 1e-16;
     options.max_num_iterations = 1000;
     options.use_explicit_schur_complement = true;
-    options.minimizer_progress_to_stdout = false;
+    options.minimizer_progress_to_stdout = true;
 
     Solver::Summary summary;
     ceres::Solve(options, &problem, &summary);

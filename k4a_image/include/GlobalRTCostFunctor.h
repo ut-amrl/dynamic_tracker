@@ -73,6 +73,8 @@ public:
         // Reproject points based on parameters for camera and object transforms
         Eigen::Matrix<T, 3, 1> res = intrinsics * camRT * objRT.inverse() * worldPoint;
 
+        //std::cout << intrinsics << std::endl;
+
         res /= res[2];
 
         residuals[0] = res[0] - T(x_image);

@@ -38,7 +38,6 @@ KinectWrapper::KinectWrapper(uint8_t deviceIndex, K4ACaptureRecipient &kfr) :
 
 KinectWrapper::~KinectWrapper()
 {
-    cout << "Destructing... do not use device handle again" << endl;
     k4a_device_close(_device);
 }
 
@@ -56,11 +55,9 @@ bool KinectWrapper::capture()
     }
     case K4A_WAIT_RESULT_TIMEOUT:
         printf("Timed out waiting for a capture\n");
-        k4a_device_close(_device);
         break;
     case K4A_WAIT_RESULT_FAILED:
         printf("Failed to read a capture\n");
-        k4a_device_close(_device);
         break;
     }
     return false;
