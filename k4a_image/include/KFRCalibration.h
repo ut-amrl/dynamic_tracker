@@ -10,7 +10,7 @@ protected:
     int chessboardRows, chessboardColumns;
 
 public:
-    std::vector<cv::Point2d> corners;
+    std::vector<cv::Point2f> corners;
 
     KFRCalibration(int chessboardRows, int chessboardColumns);
     ~KFRCalibration();

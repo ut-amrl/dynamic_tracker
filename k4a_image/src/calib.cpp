@@ -35,7 +35,7 @@ int main()
     // Internal sizes - that is, the number of points where the squares touch
     int chessboardRows = 6;
     int chessboardCols = 4;
-    double chessboardSpacing = 0.23; // TODO double-check
+    double chessboardSpacing = 1; // TODO double-check
     kc.chessboard = ModelChessboard(chessboardRows, chessboardCols, chessboardSpacing);
 
     KFRCalibration handler(chessboardRows, chessboardCols);
@@ -88,6 +88,20 @@ int main()
     }
 
     std::cout << transforms[0].getTransMat().inverse() * transforms[1].getTransMat() << std::endl;
+
+    // chessboardPoints: 3 * 24; homographies: 3 * 3
+    // std::cout << chessboardPoints.rows() << " " << chessboardPoints.cols() << " " << homographies[0].rows() << " " << homographies[0].cols();
+    for (int cam = 0; cam < homographies.size(); cam++) {
+        MatrixXd homography = optHom[cam];
+        MatrixXd projectedPoints = homography * chessboardPoints;
+        MatrixXd originalPoints = camPoints[cam];
+        std::cout << "Camera " << cam << ":\n";
+        for (int point = 0; point < projectedPoints.cols(); point++) {
+            std::cout << projectedPoints(0, point) / projectedPoints(2, point) << ", " << projectedPoints(1, point) / projectedPoints(2, point)
+                    << "\t" << originalPoints(0, point) << ", " << originalPoints(1, point) << "\n";
+        }
+        std::cout << std::endl;
+    }
 
     /*
     // Cameras relative to origin
