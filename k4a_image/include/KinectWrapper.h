@@ -15,6 +15,7 @@ public:
     ~KinectWrapper();
 
     bool capture();
+    k4a_calibration_intrinsics_t getColorCameraIntrinsics();
     //void display();
 
 protected:

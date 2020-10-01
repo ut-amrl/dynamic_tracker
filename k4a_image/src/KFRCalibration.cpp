@@ -17,6 +17,8 @@ void KFRCalibration::receiveFrame(k4a_capture_t capture) {
     Mat cvImage = kinect_to_cv(image);
     k4a_image_release(image);
 
+    this->image = cvImage;
+
     Mat grayscaleImage;
     cvtColor(cvImage, grayscaleImage, CV_BGRA2GRAY);
 

@@ -38,9 +38,16 @@ int main()
     double chessboardSpacing = 1; // TODO double-check
     kc.chessboard = ModelChessboard(chessboardRows, chessboardCols, chessboardSpacing);
 
+    MatrixXd chessboard3dPoints = kc.chessboard.getModelCBC3D();
+    std::vector<cv::Point3d> objectPoints;
+    for (int i = 0; i < chessboard3dPoints.cols(); i++) {
+        objectPoints.push_back(cv::Point3d(chessboard3dPoints(i, 0), chessboard3dPoints(i, 1), chessboard3dPoints(i, 2)));
+    }
+
     KFRCalibration handler(chessboardRows, chessboardCols);
     std::vector<Camera> cameras;
     std::vector<MatrixXd> camPoints;
+    std::vector<cv::Mat> images;
     for (int device = 0; device < 2; device++) {
         KinectWrapper wrapper(device, handler);
 
@@ -66,6 +73,8 @@ int main()
         camPoints.push_back(current.projections[0]);
         current.index = device;
         cameras.push_back(current);
+
+        images.push_back(handler.image);
 
         //std::cout << handler.corners << std::endl;
     }
@@ -101,6 +110,15 @@ int main()
                     << "\t" << originalPoints(0, point) << ", " << originalPoints(1, point) << "\n";
         }
         std::cout << std::endl;
+
+        for (int point = 0; point < projectedPoints.cols(); point++) {
+            drawCrosshair(images[cam], projectedPoints(0, point) / projectedPoints(2, point), projectedPoints(1, point) / projectedPoints(2, point), 10, 2, cv::Scalar(255, 0, 0));
+        }
+
+        cv::Mat scaled;
+        cv::resize(images[cam], scaled, cv::Size(), 0.4, 0.4);
+        cv::imshow("camera", scaled);
+        cv::waitKey();
     }
 
     /*

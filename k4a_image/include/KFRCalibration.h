@@ -11,6 +11,7 @@ protected:
 
 public:
     std::vector<cv::Point2f> corners;
+    cv::Mat image;
 
     KFRCalibration(int chessboardRows, int chessboardColumns);
     ~KFRCalibration();
