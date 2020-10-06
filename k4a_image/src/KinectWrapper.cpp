@@ -41,6 +41,10 @@ KinectWrapper::~KinectWrapper()
     k4a_device_close(_device);
 }
 
+k4a_calibration_t KinectWrapper::getCalibration() {
+    return _calibration;
+}
+
 k4a_calibration_intrinsics_t KinectWrapper::getColorCameraIntrinsics() {
     return _calibration.color_camera_calibration.intrinsics;
 }

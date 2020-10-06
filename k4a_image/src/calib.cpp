@@ -39,17 +39,31 @@ int main()
     kc.chessboard = ModelChessboard(chessboardRows, chessboardCols, chessboardSpacing);
 
     MatrixXd chessboard3dPoints = kc.chessboard.getModelCBC3D();
-    std::vector<cv::Point3d> objectPoints;
+    std::vector<cv::Point3f> objectPoints;
     for (int i = 0; i < chessboard3dPoints.cols(); i++) {
-        objectPoints.push_back(cv::Point3d(chessboard3dPoints(i, 0), chessboard3dPoints(i, 1), chessboard3dPoints(i, 2)));
+        objectPoints.push_back(cv::Point3f(chessboard3dPoints(0, i), chessboard3dPoints(1, i), chessboard3dPoints(2, i)));
     }
 
     KFRCalibration handler(chessboardRows, chessboardCols);
     std::vector<Camera> cameras;
     std::vector<MatrixXd> camPoints;
     std::vector<cv::Mat> images;
+    std::vector<cv::Matx33f> cameraMatrices;
+    std::vector<std::vector<float>> cameraDistCoefficients;
+    std::vector<std::vector<cv::Point2f>> cvPoints;
     for (int device = 0; device < 2; device++) {
         KinectWrapper wrapper(device, handler);
+        k4a_calibration_intrinsic_parameters_t calibration = wrapper.getCalibration().color_camera_calibration.intrinsics.parameters;
+
+        cv::Matx33f cameraMatrix = cv::Matx33f::eye();
+        cameraMatrix(0, 0) = calibration.param.fx;
+        cameraMatrix(1, 1) = calibration.param.fy;
+        cameraMatrix(0, 2) = calibration.param.cx;
+        cameraMatrix(1, 2) = calibration.param.cy;
+        cameraMatrices.push_back(cameraMatrix);
+
+        cameraDistCoefficients.push_back(std::vector<float>({calibration.param.k1, calibration.param.k2, calibration.param.k3,
+            calibration.param.k4, calibration.param.k5, calibration.param.k6}));
 
         bool success = false;
         for (int i = 0; i < 3; i++) {
@@ -63,6 +77,8 @@ int main()
             std::cerr << "Too many failures, aborting" << std::endl;
             return 1;
         }
+
+        cvPoints.push_back(handler.corners);
 
         Camera current;
         current.projections[0] = MatrixXd(2, handler.corners.size());
@@ -79,6 +95,27 @@ int main()
         //std::cout << handler.corners << std::endl;
     }
 
+    std::vector<std::vector<cv::Point2f>> mainChessboardPoints, secondChesssboardPoints;
+    mainChessboardPoints.push_back(cvPoints[0]);
+    secondChesssboardPoints.push_back(cvPoints[1]);
+    cv::Size imageSize(images[0].size());
+    /*Transformation mainToSecond = stereo_calibration(calibrations[0], calibrations[1], mainChessboardPoints, secondChesssboardPoints,
+            imageSize, cv::Size(chessboardRows, chessboardCols), chessboardSpacing);
+    
+    std::cout << "Translation: " << mainToSecond.t << std::endl;
+    std::cout << "Rotation: " << mainToSecond.R << std::endl;*/
+
+    cv::Mat rotation, translation, essential, fundamental;
+    std::vector<std::vector<cv::Point3f>> objectChessboardPoints;
+    objectChessboardPoints.push_back(objectPoints);
+
+    cv::stereoCalibrate(objectChessboardPoints, mainChessboardPoints, secondChesssboardPoints, cameraMatrices[0], cameraDistCoefficients[0],
+        cameraMatrices[1], cameraDistCoefficients[1], imageSize,
+        rotation, translation, cv::noArray(), cv::noArray());
+    
+    std::cout << "Rotation: " << rotation << std::endl;
+    std::cout << "Translation: " << translation << std::endl;
+
     MatrixXd chessboardPoints = kc.chessboard.getModelCBH2D();
 
     std::vector<MatrixXd> homographies = computeHomographies(chessboardPoints, camPoints);
@@ -89,7 +126,7 @@ int main()
     //cout << "Estimated points from homography (chessboard points -> camera points):" << endl;
     //cout << homPts << endl;
 
-    std::vector<MatrixXd> optHom = optimizeHomographies(chessboardPoints, camPoints, homographies);
+    /*std::vector<MatrixXd> optHom = optimizeHomographies(chessboardPoints, camPoints, homographies);
     // Camera relative to chessboard
     std::vector<RigidTrans> transforms = extractRTs(k, optHom);
     for (RigidTrans trans : transforms) {
@@ -119,7 +156,7 @@ int main()
         cv::resize(images[cam], scaled, cv::Size(), 0.4, 0.4);
         cv::imshow("camera", scaled);
         cv::waitKey();
-    }
+    }*/
 
     /*
     // Cameras relative to origin

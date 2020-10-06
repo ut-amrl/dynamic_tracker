@@ -16,6 +16,7 @@ public:
 
     bool capture();
     k4a_calibration_intrinsics_t getColorCameraIntrinsics();
+    k4a_calibration_t getCalibration();
     //void display();
 
 protected:
