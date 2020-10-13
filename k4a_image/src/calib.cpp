@@ -26,6 +26,41 @@ MatrixXd createEmptyRT() {
     return v;
 }
 
+// projectedPoints represents the 2D points to draw. It has two or three rows; the X is row 0 / row 2, the Y is row 1 / row 2.
+// Each column is one point.
+void drawPoints(cv::Mat background, Eigen::MatrixXd projectedPoints) {
+    cv::Mat image;
+    background.copyTo(image);
+
+    for (int point = 0; point < projectedPoints.cols(); point++) {
+        double x = projectedPoints(0, point);
+        double y = projectedPoints(1, point);
+        if (projectedPoints.rows() > 2) {
+            x /= projectedPoints(2, point);
+            y /= projectedPoints(2, point);
+        }
+        drawCrosshair(image, x, y, 10, 2, cv::Scalar(255, 0, 0));
+    }
+
+    cv::Mat scaled;
+    cv::resize(image, scaled, cv::Size(), 0.4, 0.4);
+    cv::imshow("camera", scaled);
+    cv::waitKey();
+}
+
+
+
+std::vector<Eigen::MatrixXd> computeHomographiesFromHomogeneous(Eigen::MatrixXd modelPoints,
+                                     std::vector<Eigen::MatrixXd> camPoints) {
+  std::vector<Eigen::MatrixXd> homographies;
+  for (int i = 0; i < camPoints.size(); i++) {
+    Eigen::MatrixXd h =
+        computeDLTHomography(modelPoints, camPoints[i]);
+    homographies.push_back(h);
+  }
+  return homographies;
+}
+
 int main()
 {
     KinectCalibrator kc("/home/henry/Desktop/images/", k);
@@ -33,9 +68,9 @@ int main()
     //kc.test();
 
     // Internal sizes - that is, the number of points where the squares touch
-    int chessboardRows = 6;
-    int chessboardCols = 4;
-    double chessboardSpacing = 1; // TODO double-check
+    int chessboardRows = 4;
+    int chessboardCols = 6;
+    double chessboardSpacing = 1; // TODO figure out what this is - one unit should be one millimeter
     kc.chessboard = ModelChessboard(chessboardRows, chessboardCols, chessboardSpacing);
 
     MatrixXd chessboard3dPoints = kc.chessboard.getModelCBC3D();
@@ -48,19 +83,19 @@ int main()
     std::vector<Camera> cameras;
     std::vector<MatrixXd> camPoints;
     std::vector<cv::Mat> images;
-    std::vector<cv::Matx33f> cameraMatrices;
+    std::vector<MatrixXd> cameraIntrinsicMatrices;
     std::vector<std::vector<float>> cameraDistCoefficients;
     std::vector<std::vector<cv::Point2f>> cvPoints;
     for (int device = 0; device < 2; device++) {
         KinectWrapper wrapper(device, handler);
         k4a_calibration_intrinsic_parameters_t calibration = wrapper.getCalibration().color_camera_calibration.intrinsics.parameters;
 
-        cv::Matx33f cameraMatrix = cv::Matx33f::eye();
+        MatrixXd cameraMatrix = MatrixXd::Identity(3, 3);
         cameraMatrix(0, 0) = calibration.param.fx;
         cameraMatrix(1, 1) = calibration.param.fy;
         cameraMatrix(0, 2) = calibration.param.cx;
         cameraMatrix(1, 2) = calibration.param.cy;
-        cameraMatrices.push_back(cameraMatrix);
+        cameraIntrinsicMatrices.push_back(cameraMatrix);
 
         cameraDistCoefficients.push_back(std::vector<float>({calibration.param.k1, calibration.param.k2, calibration.param.k3,
             calibration.param.k4, calibration.param.k5, calibration.param.k6}));
@@ -81,10 +116,11 @@ int main()
         cvPoints.push_back(handler.corners);
 
         Camera current;
-        current.projections[0] = MatrixXd(2, handler.corners.size());
+        current.projections[0] = MatrixXd(3, handler.corners.size());
         for(int i = 0; i < handler.corners.size(); i++) {
             current.projections[0](0, i) = handler.corners[i].x;
             current.projections[0](1, i) = handler.corners[i].y;
+            current.projections[0](2, i) = 1.0;
         }
         camPoints.push_back(current.projections[0]);
         current.index = device;
@@ -95,38 +131,81 @@ int main()
         //std::cout << handler.corners << std::endl;
     }
 
-    std::vector<std::vector<cv::Point2f>> mainChessboardPoints, secondChesssboardPoints;
-    mainChessboardPoints.push_back(cvPoints[0]);
-    secondChesssboardPoints.push_back(cvPoints[1]);
-    cv::Size imageSize(images[0].size());
-    /*Transformation mainToSecond = stereo_calibration(calibrations[0], calibrations[1], mainChessboardPoints, secondChesssboardPoints,
-            imageSize, cv::Size(chessboardRows, chessboardCols), chessboardSpacing);
-    
-    std::cout << "Translation: " << mainToSecond.t << std::endl;
-    std::cout << "Rotation: " << mainToSecond.R << std::endl;*/
+    float centroidX = 0;
+    float centroidY = 0;
+    for(int i = 0; i < camPoints[0].cols(); i++) {
+        centroidX += camPoints[0] (0, i);
+        centroidY += camPoints[0] (1, i);
+    }
 
-    cv::Mat rotation, translation, essential, fundamental;
-    std::vector<std::vector<cv::Point3f>> objectChessboardPoints;
-    objectChessboardPoints.push_back(objectPoints);
+    centroidX /= camPoints[0].cols();
+    centroidY /= camPoints[0].cols();
 
-    cv::stereoCalibrate(objectChessboardPoints, mainChessboardPoints, secondChesssboardPoints, cameraMatrices[0], cameraDistCoefficients[0],
-        cameraMatrices[1], cameraDistCoefficients[1], imageSize,
-        rotation, translation, cv::noArray(), cv::noArray());
-    
-    std::cout << "Rotation: " << rotation << std::endl;
-    std::cout << "Translation: " << translation << std::endl;
+    float scale = 0;
+    for(int i = 0; i < camPoints[0].cols(); i++) {
+        float scaleX = camPoints[0] (0, i) - centroidX;
+        float scaleY = camPoints[0] (1, i) - centroidY;
+        scale += sqrt(scaleX * scaleX + scaleY * scaleY);
+    }
+
+    scale /= camPoints[0].cols();
+
+    scale = sqrt(2.0) / scale;
+
+    Eigen::MatrixXd isoMat(3,3);
+    isoMat(0,0) = scale;
+    isoMat(0,1) = 0.0;
+    isoMat(0,2) = -scale * centroidX;
+
+    isoMat(1,0) = 0.0;
+    isoMat(1,1) = scale;
+    isoMat(1,2) = -scale * centroidY;
+
+    isoMat(2,0) = 0.0;
+    isoMat(2,1) = 0.0;
+    isoMat(2,2) = 1.0;
+
+    for(size_t i = 0; i < camPoints.size(); i++) {
+        Eigen::MatrixXd pts = camPoints[i];
+        camPoints[i] = isoMat * pts;
+    }
+
+    Eigen::MatrixXd isoMatInv = isoMat.inverse();
 
     MatrixXd chessboardPoints = kc.chessboard.getModelCBH2D();
+    std::vector<MatrixXd> homographies = computeHomographiesFromHomogeneous(chessboardPoints, camPoints);
+    
+    for(size_t i = 0; i < homographies.size(); i++) {
+        MatrixXd H = isoMatInv * homographies[i];
+        /*
+        MatrixXd H(3,3);
+        H(0,0) = -0.25758;
+        H(0,1) = -0.0486164;
+        H(0,2) = -0.735237;
 
-    std::vector<MatrixXd> homographies = computeHomographies(chessboardPoints, camPoints);
+        H(1,0) = -0.204497;
+        H(1,1) = -0.0458009;
+        H(1,2) = -0.588896;
 
+        H(2,0) = -0.000124729;
+        H(2,1) = -0.0000227149;
+        H(2,2) = -0.000357682;
+        */
+        /*
+        {{-0.25758, -0.0486164, -0.735237}, {-0.204497, -0.0458009, \
+-0.588896}, {-0.000124729, -0.0000227149, -0.000357682}}
+            */
+        homographies[i] = H;
+    }
+
+    /*
     // Try going from object points to camera points
     //MatrixXd homPts = homographies[0] * kc.chessboard.getModelCBH2D();
     //homPts = divideByLastRowRemoveLastRow(homPts);
     //cout << "Estimated points from homography (chessboard points -> camera points):" << endl;
     //cout << homPts << endl;
 
-    /*std::vector<MatrixXd> optHom = optimizeHomographies(chessboardPoints, camPoints, homographies);
+    std::vector<MatrixXd> optHom = optimizeHomographies(chessboardPoints, camPoints, homographies);
     // Camera relative to chessboard
     std::vector<RigidTrans> transforms = extractRTs(k, optHom);
     for (RigidTrans trans : transforms) {
@@ -134,29 +213,23 @@ int main()
     }
 
     std::cout << transforms[0].getTransMat().inverse() * transforms[1].getTransMat() << std::endl;
+    */
 
     // chessboardPoints: 3 * 24; homographies: 3 * 3
     // std::cout << chessboardPoints.rows() << " " << chessboardPoints.cols() << " " << homographies[0].rows() << " " << homographies[0].cols();
-    for (int cam = 0; cam < homographies.size(); cam++) {
-        MatrixXd homography = optHom[cam];
+    //homographies.size()
+    for (int cam = 0; cam < 1; cam++) {
+        MatrixXd homography = homographies[cam];
         MatrixXd projectedPoints = homography * chessboardPoints;
         MatrixXd originalPoints = camPoints[cam];
-        std::cout << "Camera " << cam << ":\n";
-        for (int point = 0; point < projectedPoints.cols(); point++) {
-            std::cout << projectedPoints(0, point) / projectedPoints(2, point) << ", " << projectedPoints(1, point) / projectedPoints(2, point)
-                    << "\t" << originalPoints(0, point) << ", " << originalPoints(1, point) << "\n";
-        }
-        std::cout << std::endl;
 
-        for (int point = 0; point < projectedPoints.cols(); point++) {
-            drawCrosshair(images[cam], projectedPoints(0, point) / projectedPoints(2, point), projectedPoints(1, point) / projectedPoints(2, point), 10, 2, cv::Scalar(255, 0, 0));
-        }
-
-        cv::Mat scaled;
-        cv::resize(images[cam], scaled, cv::Size(), 0.4, 0.4);
-        cv::imshow("camera", scaled);
-        cv::waitKey();
-    }*/
+        std:: cout << projectedPoints << std::endl;
+        //std:: cout << originalPoints << std::endl;
+        
+        drawPoints(images[cam], projectedPoints);
+        //drawPoints(images[cam], originalPoints);
+       
+    }
 
     /*
     // Cameras relative to origin

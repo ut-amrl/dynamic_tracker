@@ -22,7 +22,7 @@ void KFRCalibration::receiveFrame(k4a_capture_t capture) {
     Mat grayscaleImage;
     cvtColor(cvImage, grayscaleImage, CV_BGRA2GRAY);
 
-    Size patternSize(chessboardRows, chessboardColumns);
+    Size patternSize(chessboardColumns, chessboardRows);
 
     corners.clear();
 
