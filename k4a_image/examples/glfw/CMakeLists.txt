@@ -16,5 +16,7 @@ include_directories(
 target_link_libraries(glfw_example
 	glfw
 	GL
+	GLU
+	glut
 	m
 )
