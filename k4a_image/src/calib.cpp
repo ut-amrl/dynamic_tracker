@@ -214,13 +214,22 @@ int main()
 
     std::cout << transforms[0].getTransMat().inverse() * transforms[1].getTransMat() << std::endl;
     */
+    
+    std::vector<MatrixXd> chessboardToCamera;
+    for (size_t i = 0; i < homographies.size(); i++) {
+        chessboardToCamera.push_back(cameraIntrinsicMatrices[i].inverse() * homographies[i]);
+        //std::cout << "homographies[" << i << "] = " << homographies[i] << std::endl;
+        //std::cout << "chessboardToCamera[" << i << "] = " << chessboardToCamera[i] << std::endl;
+
+    }
 
     // chessboardPoints: 3 * 24; homographies: 3 * 3
     // std::cout << chessboardPoints.rows() << " " << chessboardPoints.cols() << " " << homographies[0].rows() << " " << homographies[0].cols();
     //homographies.size()
-    for (int cam = 0; cam < 1; cam++) {
+    /*for (int cam = 0; cam < 1; cam++) {
         MatrixXd homography = homographies[cam];
-        MatrixXd projectedPoints = homography * chessboardPoints;
+        //MatrixXd projectedPoints = homography * chessboardPoints;
+        MatrixXd projectedPoints = cameraIntrinsicMatrices[cam] * chessboardToCamera[cam] * kc.chessboard.getModelCBH2D();
         MatrixXd originalPoints = camPoints[cam];
 
         std:: cout << projectedPoints << std::endl;
@@ -229,7 +238,11 @@ int main()
         drawPoints(images[cam], projectedPoints);
         //drawPoints(images[cam], originalPoints);
        
-    }
+    }*/
+
+    std::cout << "Transformation from first camera to second camera:\n"
+        << (chessboardToCamera[1] * chessboardToCamera[0].inverse())
+        << std::endl;
 
     /*
     // Cameras relative to origin
