@@ -226,23 +226,42 @@ int main()
     // chessboardPoints: 3 * 24; homographies: 3 * 3
     // std::cout << chessboardPoints.rows() << " " << chessboardPoints.cols() << " " << homographies[0].rows() << " " << homographies[0].cols();
     //homographies.size()
-    /*for (int cam = 0; cam < 1; cam++) {
+    for (int cam = 0; cam < 1; cam++) {
         MatrixXd homography = homographies[cam];
         //MatrixXd projectedPoints = homography * chessboardPoints;
         MatrixXd projectedPoints = cameraIntrinsicMatrices[cam] * chessboardToCamera[cam] * kc.chessboard.getModelCBH2D();
         MatrixXd originalPoints = camPoints[cam];
 
-        std:: cout << projectedPoints << std::endl;
-        //std:: cout << originalPoints << std::endl;
+        //std:: cout << projectedPoints << std::endl;
+        std:: cout << originalPoints << std::endl;
         
         drawPoints(images[cam], projectedPoints);
         //drawPoints(images[cam], originalPoints);
        
-    }*/
+    }
+
+    MatrixXd betweenCameras = chessboardToCamera[1] * chessboardToCamera[0].inverse();
 
     std::cout << "Transformation from first camera to second camera:\n"
-        << (chessboardToCamera[1] * chessboardToCamera[0].inverse())
-        << std::endl;
+        << betweenCameras << std::endl;
+    
+    Vector3d r1 = betweenCameras.col(0), r2 = betweenCameras.col(1);
+    r1.normalize();
+    r2.normalize();
+    Vector3d r3 = r1.cross(r2);
+
+    MatrixXd rot(3, 3);
+    rot.col(0) = r1;
+    rot.col(1) = r2;
+    rot.col(2) = r3;
+
+    // Might need to do SVD or QR here if the point clouds look wrong
+
+    MatrixXd transformation = MatrixXd::Identity(4, 4);
+    transformation.block(0, 0, 3, 3) = rot;
+    transformation.block(0, 3, 3, 1) = betweenCameras.col(2);
+
+    std::cout << "Final rigid transformation:\n" << transformation << std::endl;
 
     /*
     // Cameras relative to origin

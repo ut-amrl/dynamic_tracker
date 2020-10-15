@@ -74,6 +74,8 @@ int main(int argc, char** argv) {
         glRotatef(angle, 0, 1, 0);
         angle += 1;
 
+        // glLoadMatrix, glMultMatrix
+
         glViewport(0,0,640,480);
         display();
         glfwSwapBuffers(window);
