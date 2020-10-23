@@ -21,6 +21,11 @@ add_executable(k4a_image
     ${KINECT_WRAPPER_SOURCES}
 )
 
+add_executable(viewer
+    src/viewer.cpp
+    ${KINECT_WRAPPER_SOURCES}
+)
+
 add_executable(server
     src/server.cpp
 )
@@ -66,6 +71,21 @@ target_link_libraries(k4a_image
     k4a
     k4abt
     k4arecord
+)
+
+target_link_libraries(viewer
+    ${Ceres_LIBS}
+    ${OpenCV_LIBS} 
+	${VISION_GEOMETRY_LIBRARY}
+    ceres
+    k4a
+    k4abt
+    k4arecord
+    GL
+    GLU
+    glfw
+    glut
+    m
 )
 
 # Dependencies of this library
