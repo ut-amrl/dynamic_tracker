@@ -5,7 +5,11 @@
 #include <k4a/k4a.h>
 #include <iostream>
 
+#include <Eigen/Eigen>
+
 #include "KinectWrapper.h"
+
+Eigen::MatrixXd RIGID_TRANSFORMATION(4, 4);
 
 class KFRViewer: public K4ACaptureRecipient {
 private:
@@ -59,8 +63,8 @@ public:
         void *colorBuffer = k4a_image_get_buffer(mapped_color_image);
 
         glEnableClientState(GL_VERTEX_ARRAY);
-        glEnableClientState(GL_COLOR_ARRAY);
         glVertexPointer(3, GL_SHORT, 0, buffer);
+        glEnableClientState(GL_COLOR_ARRAY);
         glColorPointer(4, GL_UNSIGNED_BYTE, 0, colorBuffer); // TODO this is BGRA, GL reads it as RGBA
         glDrawArrays(GL_POINTS, 0, size / 6);
         glDisableClientState(GL_VERTEX_ARRAY);
@@ -94,7 +98,16 @@ void display() {
 
     //displayTeapots();
     for(int i = 0; i < 2; i++) {
+        glPushMatrix();
+        if (i == 1) {
+            //glColor3d(0, 1, 0);
+            glMultMatrixd(RIGID_TRANSFORMATION.data());
+            //glRotated(180, 0, 0, 1);
+        } else {
+            //glColor3d(1, 0, 0);
+        }
         frameRecipient[i].draw();
+        glPopMatrix();
     }
 
     glFlush();
@@ -130,7 +143,49 @@ onGLMessage( GLenum source,
     }
 }
 
+// Rotation helpers
+/*Eigen::Vector3d mapToArcball(double x, double y, double displayWidth, double displayHeight) {
+    Eigen::Vector2d scaled((x * 2 / displayWidth) - 1, (y * 2 / displayHeight) - 1);
+
+    double distanceFromCenterSquared = scaled(0) * scaled(0) + scaled(1) * scaled(1);
+
+    if (distanceFromCenterSquared >= 1) {
+        double distanceFromCenter = std::sqrt(distanceFromCenterSquared);
+        return Eigen::Vector3d(scaled(0) / distanceFromCenter, scaled(1) / distanceFromCenter, 0);
+    }
+
+    return Eigen::Vector3d(scaled(0), scaled(1), std::sqrt(1 - distanceFromCenterSquared));
+}
+
+Eigen::Quaterniond getArcballRotation(double startX, double startY, double endX, double endY, double displayWidth, double displayHeight) {
+    Eigen::Vector3d startPos = mapToArcball(startX, startY, displayWidth, displayHeight);
+    Eigen::Vector3d endPos = mapToArcball(endX, endY, displayWidth, displayHeight);
+
+    Eigen::Vector3d crossProduct = startPos.cross(endPos);
+
+    return Eigen::Quaterniond(startPos.dot(endPos), crossProduct(0), crossProduct(1), crossProduct(2));
+}*/
+
 int main(int argc, char** argv) {
+/**
+ * Transformation chessboard->camera 0:
+0.997567, -0.0693368, -0.00724109, -800.212,
+0.0683186, 0.992991, -0.0964486, -457.947,
+0.0138778, 0.0957193, 0.995312, 764.482,
+0, 0, 0, 1;
+Transformation chessboard->camera 1:
+0.99627, -0.0816449, 0.0279359, -768.951,
+0.0830188, 0.995181, -0.0521818, -445.724,
+-0.0235409, 0.0543064, 0.998247, 735.678,
+0, 0, 0, 1;
+*/
+    RIGID_TRANSFORMATION <<
+0.99944, -0.0186871, -0.0453246, -97.0864,
+0.0112622, 0.999502, 0.0153161, -14.0367,
+0.0480787, -0.0152126, 0.998655, 7.35622,
+0, 0, 0, 1;
+    RIGID_TRANSFORMATION = RIGID_TRANSFORMATION.inverse();
+
     if (!glfwInit())
         return -1;
     glutInit(&argc, argv);
@@ -148,7 +203,9 @@ int main(int argc, char** argv) {
     if (!glfwInit())
         exit(EXIT_FAILURE);
 
-    GLFWwindow *window = glfwCreateWindow(640, 480, "Hello World", NULL, NULL);
+    int windowWidth = 60;
+    int windowHeight = 480;
+    GLFWwindow *window = glfwCreateWindow(windowWidth, windowHeight, "Camera View", NULL, NULL);
     // glViewport(0, 0,  640, 480);
     if (!window) {
         glfwTerminate();
@@ -176,15 +233,14 @@ int main(int argc, char** argv) {
 
     double lastMouseX, lastMouseY;
 
+    //Eigen::MatrixXd cameraTransform = Eigen::MatrixXd::Identity(4, 4);
+
     double cameraX = 0, cameraY = 0, cameraZ = 0;
+    double cameraYaw = 0, cameraPitch = 0;
 
     while (!glfwWindowShouldClose(window)) {
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
-        glRotatef(180, 0, 1, 0);
-        glRotatef(180, 0, 0, 1);
-
-        glTranslatef(cameraX, cameraY, cameraZ);
 
         double currentMouseX, currentMouseY;
         glfwGetCursorPos(window, &currentMouseX, &currentMouseY);
@@ -195,12 +251,49 @@ int main(int argc, char** argv) {
 
         if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_1)) {
             // Rotation
+            cameraYaw += mouseChangeX * -0.1;
+            cameraPitch += mouseChangeY * -0.1;
+
+            while (cameraYaw < -180) cameraYaw += 360;
+            while (cameraYaw > 180) cameraYaw -= 360;
+            
+            if (cameraPitch > 90) cameraPitch = 90;
+            if (cameraPitch < -90) cameraPitch = -90;
         }
         if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_2)) {
             // Translation
-
+            cameraX += mouseChangeX;
+            cameraY -= mouseChangeY;
         }
         // TODO zoom with mouse wheel
+
+        /*
+        if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_1)) {
+            // Rotation
+            //Eigen::MatrixXd rigidTransform = Eigen::MatrixXd::Identity(4, 4);
+            //rigidTransform.block(0, 0, 3, 3) = getArcballRotation(lastMouseX, lastMouseY, currentMouseX, currentMouseY,
+            //    windowWidth, windowHeight).toRotationMatrix();
+            //cameraTransform *= rigidTransform;
+        }
+        if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_2)) {
+            // Translation
+            Eigen::MatrixXd translateRelativeToCamera = Eigen::MatrixXd::Identity(4, 4);
+            translateRelativeToCamera(0, 3) = mouseChangeX; // Movement on camera's X axis
+            translateRelativeToCamera(1, 3) = -mouseChangeY; // Movement on camera's Y axis
+            
+            cameraTransform *= translateRelativeToCamera;
+        }
+        // TODO zoom with mouse wheel
+
+        glMultMatrixd(cameraTransform.data());
+        */
+
+        glRotated(cameraPitch, 1, 0, 0);
+        glRotated(cameraYaw, 0, 1, 0);
+        glTranslatef(cameraX, cameraY, cameraZ);
+
+        glRotatef(180, 0, 1, 0);
+        glRotatef(180, 0, 0, 1);
 
         glViewport(0,0,640,480);
         display();
