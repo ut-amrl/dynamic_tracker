@@ -84,7 +84,6 @@ target_link_libraries(viewer
     GL
     GLU
     glfw
-    glut
     m
 )
 

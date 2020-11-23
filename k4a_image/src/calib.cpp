@@ -276,6 +276,54 @@ void printMatrix(MatrixXd mat) {
     } 
 }
 
+MatrixXd createIsometricConversionHomography(MatrixXd pts) {
+    float centroidX = 0;
+    float centroidY = 0;
+    for(int i = 0; i < pts.cols(); i++) {
+        centroidX += pts(0, i);
+        centroidY += pts(1, i);
+    }
+
+    centroidX /= pts.cols();
+    centroidY /= pts.cols();
+
+    float scale = 0;
+    for(int i = 0; i < pts.cols(); i++) {
+        float scaleX = pts(0, i) - centroidX;
+        float scaleY = pts(1, i) - centroidY;
+        scale += sqrt(scaleX * scaleX + scaleY * scaleY);
+    }
+
+    scale /= pts.cols();
+
+    scale = sqrt(2.0) / scale;
+
+    Eigen::MatrixXd isoMat(3,3);
+    isoMat(0,0) = scale;
+    isoMat(0,1) = 0.0;
+    isoMat(0,2) = -scale * centroidX;
+
+    isoMat(1,0) = 0.0;
+    isoMat(1,1) = scale;
+    isoMat(1,2) = -scale * centroidY;
+
+    isoMat(2,0) = 0.0;
+    isoMat(2,1) = 0.0;
+    isoMat(2,2) = 1.0;
+
+    return isoMat;
+}
+
+MatrixXd computeRTModelToCamera(MatrixXd modelPointsH2D, MatrixXd camPointsH2D, MatrixXd intrinsicHomography) {
+    Eigen::MatrixXd isoMat = createIsometricConversionHomography(camPointsH2D);
+
+    Eigen::MatrixXd normalizedHomography = computeDLTHomography(modelPointsH2D, isoMat * camPointsH2D);
+    
+    MatrixXd H = isoMat.inverse() * normalizedHomography;
+    MatrixXd chessboardToCameraHomography = intrinsicHomography.inverse() * H;
+    return computeUnoptimizedTransformation(chessboardToCameraHomography);
+}
+
 std::string printMathematicaString(Eigen::MatrixXd A) {
     std::stringstream ss;
     ss << std::fixed;
@@ -296,190 +344,60 @@ std::string printMathematicaString(Eigen::MatrixXd A) {
     return ss.str();
 }
 
+bool captureChessboardCorners(int device, int chessboardRows, int chessboardCols, MatrixXd *intrinsicsOut, MatrixXd *pointsOut) {
+    KFRCalibration handler(chessboardRows, chessboardCols);
+    KinectWrapper wrapper(device, handler);
+    if (!wrapper.capture()) {
+        return false;
+    }
+
+    k4a_calibration_intrinsic_parameters_t calibration = wrapper.getCalibration().color_camera_calibration.intrinsics.parameters;
+    MatrixXd cameraMatrix = MatrixXd::Identity(3, 3);
+    cameraMatrix(0, 0) = calibration.param.fx;
+    cameraMatrix(1, 1) = calibration.param.fy;
+    cameraMatrix(0, 2) = calibration.param.cx;
+    cameraMatrix(1, 2) = calibration.param.cy;
+
+    MatrixXd cornerList(3, handler.corners.size());
+    for(int i = 0; i < handler.corners.size(); i++) {
+        cornerList(0, i) = handler.corners[i].x;
+        cornerList(1, i) = handler.corners[i].y;
+        cornerList(2, i) = 1.0;
+    }
+
+    if (intrinsicsOut != NULL) {
+        *intrinsicsOut = cameraMatrix;
+    }
+    if (pointsOut != NULL) {
+        *pointsOut = cornerList;
+    }
+    return true;
+}
+
 
 int main()
 {
-    KinectCalibrator kc("/home/henry/Desktop/images/", k);
-    //kc.select();
-    //kc.test();
+    MatrixXd chessboardPoints = ModelChessboard(chessboardRows, chessboardCols, chessboardSpacing).getModelCBH2D();
 
-    // Internal sizes - that is, the number of points where the squares touch
-    kc.chessboard = ModelChessboard(chessboardRows, chessboardCols, chessboardSpacing);
-
-    MatrixXd chessboard3dPoints = kc.chessboard.getModelCBC3D();
-    std::vector<cv::Point3f> objectPoints;
-    for (int i = 0; i < chessboard3dPoints.cols(); i++) {
-        objectPoints.push_back(cv::Point3f(chessboard3dPoints(0, i), chessboard3dPoints(1, i), chessboard3dPoints(2, i)));
-    }
-
-    KFRCalibration handler(chessboardRows, chessboardCols);
     std::vector<MatrixXd> camPoints;
-    std::vector<cv::Mat> images;
     std::vector<MatrixXd> cameraIntrinsicMatrices;
-    std::vector<CameraIntrinsics> cameraIntrinsicObjects;
-    std::vector<std::vector<float>> cameraDistCoefficients;
     for (int device = 0; device < 2; device++) {
-        KinectWrapper wrapper(device, handler);
-        k4a_calibration_intrinsic_parameters_t calibration = wrapper.getCalibration().color_camera_calibration.intrinsics.parameters;
+        MatrixXd points, intrinsics;
 
-        MatrixXd cameraMatrix = MatrixXd::Identity(3, 3);
-        cameraMatrix(0, 0) = calibration.param.fx;
-        cameraMatrix(1, 1) = calibration.param.fy;
-        cameraMatrix(0, 2) = calibration.param.cx;
-        cameraMatrix(1, 2) = calibration.param.cy;
-        cameraIntrinsicMatrices.push_back(cameraMatrix);
-        cameraIntrinsicObjects.push_back(CameraIntrinsics(calibration.param.fx, calibration.param.fy, 0, calibration.param.cx, calibration.param.cy));
-
-        cameraDistCoefficients.push_back(std::vector<float>({calibration.param.k1, calibration.param.k2, calibration.param.k3,
-            calibration.param.k4, calibration.param.k5, calibration.param.k6}));
-
-        bool success = false;
-        for (int i = 0; i < 3; i++) {
-            if (wrapper.capture()) {
-                success = true;
-                break;
-            }
-            std::cerr << "Failed to read a capture, will retry..." << std::endl;
-        }
+        bool success = captureChessboardCorners(device, chessboardRows, chessboardCols, &intrinsics, &points);
         if (!success) {
-            std::cerr << "Too many failures, aborting" << std::endl;
+            std::cout << "Failed to capture points. Run this program again" << std::endl;
             return 1;
         }
 
-        if (device == 1) {
-            cv::imwrite("image-2d-device2.png", handler.image);
-        }
-
-        MatrixXd cornerList(3, handler.corners.size());
-        for(int i = 0; i < handler.corners.size(); i++) {
-            cornerList(0, i) = handler.corners[i].x;
-            cornerList(1, i) = handler.corners[i].y;
-            cornerList(2, i) = 1.0;
-        }
-        camPoints.push_back(cornerList);
-
-        images.push_back(handler.image);
-
-        //std::cout << handler.corners << std::endl;
+        camPoints.push_back(points);
+        cameraIntrinsicMatrices.push_back(intrinsics);
     }
 
-    std::vector<Eigen::MatrixXd> isoMatInverses;
+    std::vector<MatrixXd> chessboardToCameraRTs;
     for(size_t i = 0; i < camPoints.size(); i++) {
-        Eigen::MatrixXd pts = camPoints[i];
-        
-        float centroidX = 0;
-        float centroidY = 0;
-        for(int i = 0; i < pts.cols(); i++) {
-            centroidX += pts(0, i);
-            centroidY += pts(1, i);
-        }
-
-        centroidX /= pts.cols();
-        centroidY /= pts.cols();
-
-        float scale = 0;
-        for(int i = 0; i < pts.cols(); i++) {
-            float scaleX = pts(0, i) - centroidX;
-            float scaleY = pts(1, i) - centroidY;
-            scale += sqrt(scaleX * scaleX + scaleY * scaleY);
-        }
-
-        scale /= pts.cols();
-
-        scale = sqrt(2.0) / scale;
-
-        Eigen::MatrixXd isoMat(3,3);
-        isoMat(0,0) = scale;
-        isoMat(0,1) = 0.0;
-        isoMat(0,2) = -scale * centroidX;
-
-        isoMat(1,0) = 0.0;
-        isoMat(1,1) = scale;
-        isoMat(1,2) = -scale * centroidY;
-
-        isoMat(2,0) = 0.0;
-        isoMat(2,1) = 0.0;
-        isoMat(2,2) = 1.0;
-
-        camPoints[i] = isoMat * pts;
-        isoMatInverses.push_back(isoMat.inverse());
+        chessboardToCameraRTs.push_back(computeRTModelToCamera(chessboardPoints, camPoints[i], cameraIntrinsicMatrices[i]));
     }
 
-    MatrixXd chessboardPoints = kc.chessboard.getModelCBH2D();
-    std::vector<MatrixXd> normalizedHomographies = computeHomographiesFromHomogeneous(chessboardPoints, camPoints);
-    
-    std::vector<MatrixXd> chessboardToCameraHomographies;
-    for(size_t i = 0; i < normalizedHomographies.size(); i++) {
-        MatrixXd H = isoMatInverses[i] * normalizedHomographies[i];
-
-        chessboardToCameraHomographies.push_back(cameraIntrinsicMatrices[i].inverse() * H);
-        //std::cout << "homographies[" << i << "] = " << H << std::endl;
-        std::cout << "chessboardToCameraHomographies[" << i << "] = " << chessboardToCameraHomographies[i] << std::endl;
-
-    }
-
-    std::cout << "homography 0->1 = " << chessboardToCameraHomographies[1] * chessboardToCameraHomographies[0].inverse() << std::endl;
-
-    // chessboardPoints: 3 * 24; homographies: 3 * 3
-    // std::cout << chessboardPoints.rows() << " " << chessboardPoints.cols() << " " << homographies[0].rows() << " " << homographies[0].cols();
-    //homographies.size()
-    std::vector<MatrixXd> rigidTransforms;
-    for (int cam = 0; cam < 2; cam++) {
-
-        rigidTransforms.push_back(computeTransformation(chessboardToCameraHomographies[cam], kc.chessboard.getModelCBH3D(), camPoints[cam], cameraIntrinsicMatrices[cam]));
-    }
-
-    for (int cam = 0; cam < 2; cam++) {
-        std::cout << "Chessboard to Camera Points in 3D" << cam << ":\n";
-        printMatrix(rigidTransforms[cam]);
-        std::cout << "Camera Points in 3D" << cam << ":\n";
-        printMatrix(rigidTransforms[cam] * kc.chessboard.getModelCBH3D());
-    }
-    std::cout << "Final rigid transformation:\n";
-    printMatrix(rigidTransforms[1] * rigidTransforms[0].inverse());
-    std::cout << std::flush;
-
-    for (int cam = 0; cam < 2; cam++) {
-        std::cout << cam << std::endl;
-        //std::cout << "Homographies:" << std::endl;
-        MatrixXd homography = isoMatInverses[cam] * normalizedHomographies[cam];
-        //std::cout << printMathematicaString(homography) << std::endl;
-        //std::cout << "Image Points:" << std::endl;
-        //std::cout << printMathematicaString(isoMatInverses[cam] * camPoints[cam]) << std::endl;
-        //std::cout << "Camera Instrinsics:" << std::endl;
-        //std::cout << printMathematicaString(cameraIntrinsicMatrices[cam]) << std::endl;
-        MatrixXd unoptimizedRT = computeUnoptimizedTransformation(chessboardToCameraHomographies[cam]);
-        MatrixXd extrinsicPoints = unoptimizedRT * kc.chessboard.getModelCBH3D();
-        //MatrixXd projectedPoints = cameraIntrinsicMatrices[cam] * rigidTransforms[cam].block(0, 0, 3, 4) * kc.chessboard.getModelCBH3D();
-        MatrixXd intrinsics3by4(3, 4);
-        intrinsics3by4.block(0, 0, 3, 3) = cameraIntrinsicMatrices[cam];
-        MatrixXd projectedPoints = intrinsics3by4 * extrinsicPoints;
-        std::cout << "Transformed pre-projection points:\n" << extrinsicPoints << std::endl;
-        //std::cout << "Projected points:\n" << projectedPoints << std::endl;
-        drawPoints(images[cam], projectedPoints);
-    }
-    std::cout << "Model Points:" << std::endl;
-    std::cout << printMathematicaString(kc.chessboard.getModelCBH2D()) << std::endl;
-
-    printMatrix(computeUnoptimizedTransformation(chessboardToCameraHomographies[1]) * computeUnoptimizedTransformation(chessboardToCameraHomographies[0]).inverse());
-
-
-    /*
-    // Cameras relative to origin
-    std::vector<MatrixXd> cameraRTs;
-    for (int i = 0; i < cameras.size(); i++) {
-        cameraRTs.push_back(createEmptyRT());
-    }
-    std::vector<MatrixXd> objectRTs;
-    objectRTs.push_back(createEmptyRT());
-    objectRTs[0](6) = 1;
-
-    kc.globalOpt(cameras, cameraRTs, objectRTs);
-
-    for (int i = 0; i < cameraRTs.size(); i++) {
-        std::cout << "Camera " << i << ": " << cameraRTs[i] << std::endl;
-    }
-
-    {{x_1, x_2}, {y_1, y_2}}
-    */
+    printMatrix(chessboardToCameraRTs[1] * chessboardToCameraRTs[0].inverse());
 }

@@ -1,7 +1,6 @@
 #define GL_GLEXT_PROTOTYPES
 #include <GL/gl.h>
 #include <GLFW/glfw3.h>
-#include <GL/glut.h>
 #include <k4a/k4a.h>
 #include <iostream>
 
@@ -73,24 +72,6 @@ public:
 };
 
 KFRViewer* frameRecipient = new KFRViewer[2];
-
-void displayTeapots () {
-
-    glPushMatrix();
-    glPushMatrix();
-
-    glTranslatef(0,0,-3);
-    glutWireTeapot(1);                // middle teapot
-    glTranslatef(0,2,0);
-    glutSolidTeapot(1);               // top teapot
-    glPopMatrix();
-
-    glTranslatef(0,-2,-1);
-    glutSolidTeapot(1);               // bottom teapot
-
-    glPopMatrix();
-
-}
 
 void display() {
     glClear(GL_COLOR_BUFFER_BIT);
@@ -168,15 +149,14 @@ Eigen::Quaterniond getArcballRotation(double startX, double startY, double endX,
 
 int main(int argc, char** argv) {
     RIGID_TRANSFORMATION <<
-0.999231, -0.0210577, -0.048755, -93.8821,
-0.01393, 0.999442, 0.0159451, -15.0627,
-0.051385, -0.0160524, 0.998498, 7.01485,
+0.998313, -0.026361, -0.0639366, -79.1747,
+0.0186026, 0.999319, 0.0147606, -15.4593,
+0.0668899, -0.015388, 0.997596, 2.97193,
 0, 0, 0, 1;
     RIGID_TRANSFORMATION = RIGID_TRANSFORMATION.inverse();
 
     if (!glfwInit())
         return -1;
-    glutInit(&argc, argv);
 
     for(int i = 0; i < 2; i++) {
         KinectWrapper wrapper(i, frameRecipient[i]);
