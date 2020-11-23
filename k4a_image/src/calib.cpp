@@ -276,6 +276,25 @@ void printMatrix(MatrixXd mat) {
     } 
 }
 
+std::string printMathematicaString(Eigen::MatrixXd A) {
+    std::stringstream ss;
+    ss << std::fixed;
+    ss.precision(8);
+    ss << "{";
+    for(size_t row = 0; row < A.rows(); row++) {
+        ss << "{";
+        for(size_t col = 0; col < A.cols(); col++) {
+            ss << A(row, col);
+            if(col < (A.cols() - 1))
+                ss << ",";
+        }
+        ss << "}";
+        if(row < (A.rows() - 1))
+            ss << ",";
+    }
+    ss << "}";
+    return ss.str();
+}
 
 
 int main()
