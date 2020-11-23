@@ -7,6 +7,7 @@
 #include <Eigen/Eigen>
 
 #include "KinectWrapper.h"
+#include "calibration.h"
 
 Eigen::MatrixXd RIGID_TRANSFORMATION(4, 4);
 
@@ -148,12 +149,8 @@ Eigen::Quaterniond getArcballRotation(double startX, double startY, double endX,
 }*/
 
 int main(int argc, char** argv) {
-    RIGID_TRANSFORMATION <<
-0.998313, -0.026361, -0.0639366, -79.1747,
-0.0186026, 0.999319, 0.0147606, -15.4593,
-0.0668899, -0.015388, 0.997596, 2.97193,
-0, 0, 0, 1;
-    RIGID_TRANSFORMATION = RIGID_TRANSFORMATION.inverse();
+    std::vector<Eigen::MatrixXd> chessboardToCamera = calibrateFromFile("calibration.txt");
+    RIGID_TRANSFORMATION = chessboardToCamera[0] * chessboardToCamera[1].inverse();
 
     if (!glfwInit())
         return -1;

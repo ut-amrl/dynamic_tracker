@@ -10,15 +10,7 @@
 #include "vision_geometry/HomCartShortcuts.h"
 #include "vision_geometry/LinearAlgebraShortcuts.h"
 
-CameraIntrinsics k(1834.17,
-    1833.1, 0.,
-    1910.01,
-    1113.17);
-
-int chessboardRows = 4;
-int chessboardCols = 6;
-// should be 30 mm
-double chessboardSpacing = 30;
+#include "calibration.h"
     
 template <typename T>
 Eigen::Matrix<T, -1, -1> explicitConvertMatrix(Eigen::Matrix<double, -1, -1> input) {
@@ -72,19 +64,6 @@ public:
         return true;
     }
 };
-
-MatrixXd createEmptyRT() {
-    // Format: quaternion x, y, z, w; translation x, y, z
-    VectorXd v(7);
-    v(0) = 0;
-    v(1) = 0;
-    v(2) = 0;
-    v(3) = 1;
-    v(4) = 0;
-    v(5) = 0;
-    v(6) = 0;
-    return v;
-}
 
 // projectedPoints represents the 2D points to draw. It has two or three rows; the X is row 0 / row 2, the Y is row 1 / row 2.
 // Each column is one point.
@@ -374,30 +353,40 @@ bool captureChessboardCorners(int device, int chessboardRows, int chessboardCols
     return true;
 }
 
-
-int main()
-{
-    MatrixXd chessboardPoints = ModelChessboard(chessboardRows, chessboardCols, chessboardSpacing).getModelCBH2D();
-
-    std::vector<MatrixXd> camPoints;
-    std::vector<MatrixXd> cameraIntrinsicMatrices;
-    for (int device = 0; device < 2; device++) {
-        MatrixXd points, intrinsics;
-
-        bool success = captureChessboardCorners(device, chessboardRows, chessboardCols, &intrinsics, &points);
-        if (!success) {
-            std::cout << "Failed to capture points. Run this program again" << std::endl;
-            return 1;
+MatrixXd readMatrix(std::istream &input, int rows, int cols) {
+    MatrixXd mat(rows, cols);
+    for (int row = 0; row < rows; row++) {
+        for (int col = 0; col < cols; col++) {
+            input >> mat(row, col);
         }
-
-        camPoints.push_back(points);
-        cameraIntrinsicMatrices.push_back(intrinsics);
     }
+    return mat;
+}
 
+std::vector<MatrixXd> calibrateFromFile(std::string file) {
+    std::ifstream input;
+    input.open(file);
+
+    // Format: (numbers with whitespace)
+    // rows, cols, spacing, number of cameras
+    // For each camera, intrinsics and then points, in 2D homogenous form and row-major order
+    // (row-major so a person could read it)
+
+    int chessboardRows, chessboardCols, chessboardSpacing, cams;
+    input >> chessboardRows;
+    input >> chessboardCols;
+    input >> chessboardSpacing;
+    input >> cams;
+
+    int numChessboardPoints = chessboardRows * chessboardCols;
+
+    MatrixXd chessboardPoints = ModelChessboard(chessboardRows, chessboardCols, chessboardSpacing).getModelCBH2D();
     std::vector<MatrixXd> chessboardToCameraRTs;
-    for(size_t i = 0; i < camPoints.size(); i++) {
-        chessboardToCameraRTs.push_back(computeRTModelToCamera(chessboardPoints, camPoints[i], cameraIntrinsicMatrices[i]));
-    }
+    for(size_t i = 0; i < cams; i++) {
+        MatrixXd intrinsics = readMatrix(input, 3, 3);
+        MatrixXd points(3, numChessboardPoints);
 
-    printMatrix(chessboardToCameraRTs[1] * chessboardToCameraRTs[0].inverse());
+        chessboardToCameraRTs.push_back(computeRTModelToCamera(chessboardPoints, points, intrinsics));
+    }
+    return chessboardToCameraRTs;
 }

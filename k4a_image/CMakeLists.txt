@@ -12,8 +12,13 @@ message(STATUS ${CMAKE_SOURCE_DIR})
 SET(KINECT_WRAPPER_SOURCES
     src/KinectWrapper.cpp
     src/KFRDisplay.cpp
-    src/KFRBodyTracker.cpp
+#    src/KFRBodyTracker.cpp
     src/conversions.cpp
+)
+
+SET(CALIBRATOR_SOURCES
+    src/calibration.cpp
+    src/KFRCalibration.cpp
 )
 
 add_executable(k4a_image
@@ -23,6 +28,7 @@ add_executable(k4a_image
 
 add_executable(viewer
     src/viewer.cpp
+    ${CALIBRATOR_SOURCES}
     ${KINECT_WRAPPER_SOURCES}
 )
 
@@ -37,12 +43,10 @@ add_executable(client
     src/conversions.cpp
 )
 
-add_executable(calib
-    src/calib.cpp
-    src/conversions.cpp
-    src/KinectCalibrator.cpp
-    src/KinectWrapper.cpp
-    src/KFRCalibration.cpp
+add_executable(capture-corners
+    src/capture-corners.cpp
+    ${CALIBRATOR_SOURCES}
+    ${KINECT_WRAPPER_SOURCES}
 )
 
 add_library(sockets SHARED src/sockets.cpp)
@@ -103,7 +107,7 @@ target_link_libraries(server
     sockets
 )
 
-target_link_libraries(calib
+target_link_libraries(capture-corners
     ${Ceres_LIBS}
     ${OpenCV_LIBS} 
 	${VISION_GEOMETRY_LIBRARY}
