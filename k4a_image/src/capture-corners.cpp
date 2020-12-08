@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include "KinectCalibrator.h"
+#include "KinectWrapper.h"
 #include "calibration.h"
 
 using namespace Eigen;
@@ -9,7 +10,6 @@ int chessboardRows = 4;
 int chessboardCols = 6;
 // should be 30 mm
 double chessboardSpacing = 30;
-int numCams = 2;
 
 void writeMatrix(std::ostream &out, MatrixXd matrix) {
     for (int row = 0; row < matrix.rows(); row++) {
@@ -29,6 +29,8 @@ int main()
 
     std::vector<MatrixXd> camPoints;
     std::vector<MatrixXd> cameraIntrinsicMatrices;
+
+    int numCams = KinectWrapper::getNumCameras();
     for (int device = 0; device < 2; device++) {
         MatrixXd points, intrinsics;
 

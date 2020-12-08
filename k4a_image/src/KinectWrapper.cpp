@@ -38,6 +38,7 @@ KinectWrapper::KinectWrapper(uint8_t deviceIndex, K4ACaptureRecipient &kfr) :
 
 KinectWrapper::~KinectWrapper()
 {
+    k4a_device_stop_cameras(_device);
     k4a_device_close(_device);
 }
 
@@ -69,4 +70,8 @@ bool KinectWrapper::capture()
         break;
     }
     return false;
+}
+
+size_t KinectWrapper::getNumCameras() {
+    return k4a_device_get_installed_count();
 }

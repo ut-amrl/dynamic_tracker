@@ -9,6 +9,7 @@ KFRBodyTracker::KFRBodyTracker(k4a_calibration_t sensor_calibration, bool realTi
 
 KFRBodyTracker::~KFRBodyTracker()
 {
+    k4abt_tracker_shutdown(_tracker);
     k4abt_tracker_destroy(_tracker);
 }
 
@@ -31,4 +32,16 @@ void KFRBodyTracker::receiveFrame(k4a_capture_t capture)
         printf("Error! Popping body tracking result failed!\n");
         return;
     }
+
+    // do stuff
+    for (int i = 0; i < k4abt_frame_get_num_bodies(body_frame); i++) {
+        unsigned int id = k4abt_frame_get_body_id(body_frame, i);
+        k4abt_skeleton_t skeleton;
+        k4abt_frame_get_body_skeleton(body_frame, i, &skeleton);
+        k4a_image_t body_index_map = k4abt_frame_get_body_index_map(body_frame);
+        
+        
+    }
+
+    k4abt_frame_release(body_frame);
 }

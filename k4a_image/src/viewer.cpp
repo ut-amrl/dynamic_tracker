@@ -72,23 +72,24 @@ public:
     }
 };
 
-KFRViewer* frameRecipient = new KFRViewer[2];
+std::vector<KFRViewer*> frameRecipients;
+std::vector<Eigen::MatrixXd> rigidTransformations;
 
 void display() {
     glClear(GL_COLOR_BUFFER_BIT);
     glMatrixMode(GL_MODELVIEW);
 
     //displayTeapots();
-    for(int i = 0; i < 2; i++) {
+    for(int i = 0; i < frameRecipients.size(); i++) {
         glPushMatrix();
         if (i == 1) {
             //glColor3d(0, 1, 0);
-            glMultMatrixd(RIGID_TRANSFORMATION.data());
+            glMultMatrixd(rigidTransformations[i].data());
             //glRotated(180, 0, 0, 1);
         } else {
             //glColor3d(1, 0, 0);
         }
-        frameRecipient[i].draw();
+        frameRecipients[i]->draw();
         glPopMatrix();
     }
 
@@ -150,25 +151,27 @@ Eigen::Quaterniond getArcballRotation(double startX, double startY, double endX,
 
 int main(int argc, char** argv) {
     std::vector<Eigen::MatrixXd> chessboardToCamera = calibrateFromFile("calibration.txt");
-    RIGID_TRANSFORMATION = chessboardToCamera[0] * chessboardToCamera[1].inverse();
+    std::vector<KinectWrapper> wrappers;
 
     if (!glfwInit())
         return -1;
 
-    for(int i = 0; i < 2; i++) {
-        KinectWrapper wrapper(i, frameRecipient[i]);
+    for(int i = 0; i < chessboardToCamera.size(); i++) {
+        KFRViewer *frameRecipient = new KFRViewer;
+        KinectWrapper wrapper(i, *frameRecipient);
+        wrappers.push_back(wrapper);
         k4a_calibration_t calib = wrapper.getCalibration();
-        frameRecipient[i].setCalibration(calib);
-        if (!wrapper.capture()) {
-            return -1;
-        }
+        frameRecipient->setCalibration(calib);
+
+        frameRecipients.push_back(frameRecipient);
+        rigidTransformations.push_back(chessboardToCamera[0] * chessboardToCamera[i].inverse());
     }
 
     glfwSetErrorCallback(error_callback);
     if (!glfwInit())
         exit(EXIT_FAILURE);
 
-    int windowWidth = 60;
+    int windowWidth = 640;
     int windowHeight = 480;
     GLFWwindow *window = glfwCreateWindow(windowWidth, windowHeight, "Camera View", NULL, NULL);
     // glViewport(0, 0,  640, 480);
@@ -204,6 +207,9 @@ int main(int argc, char** argv) {
     double cameraYaw = 0, cameraPitch = 0;
 
     while (!glfwWindowShouldClose(window)) {
+        for(int i = 0; i < wrappers.size(); i++) {
+            wrappers[i].capture();
+        }
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
 

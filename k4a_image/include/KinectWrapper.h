@@ -19,6 +19,8 @@ public:
     k4a_calibration_t getCalibration();
     //void display();
 
+    static size_t getNumCameras();
+
 protected:
     k4a_device_t _device;
     k4a_calibration_t _calibration;

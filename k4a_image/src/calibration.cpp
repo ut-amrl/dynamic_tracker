@@ -384,7 +384,7 @@ std::vector<MatrixXd> calibrateFromFile(std::string file) {
     std::vector<MatrixXd> chessboardToCameraRTs;
     for(size_t i = 0; i < cams; i++) {
         MatrixXd intrinsics = readMatrix(input, 3, 3);
-        MatrixXd points(3, numChessboardPoints);
+        MatrixXd points = readMatrix(input, 3, numChessboardPoints);
 
         chessboardToCameraRTs.push_back(computeRTModelToCamera(chessboardPoints, points, intrinsics));
     }
