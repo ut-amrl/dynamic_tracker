@@ -31,7 +31,7 @@ int main()
     std::vector<MatrixXd> cameraIntrinsicMatrices;
 
     int numCams = KinectWrapper::getNumCameras();
-    for (int device = 0; device < 2; device++) {
+    for (int device = 0; device < numCams; device++) {
         MatrixXd points, intrinsics;
 
         bool success = captureChessboardCorners(device, chessboardRows, chessboardCols, &intrinsics, &points);
