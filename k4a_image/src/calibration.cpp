@@ -131,111 +131,111 @@ MatrixXd computeUnoptimizedTransformation(MatrixXd homography) {
 
 MatrixXd computeTransformation(MatrixXd homography, MatrixXd objectPoints, MatrixXd camPoints, 
 MatrixXd cameraIntrinsics) {
-        ceres::Problem problem;
-    
-        Vector3d r1 = homography.col(0), r2 = homography.col(1);
-        double r1Norm = r1.norm(), r2Norm = r2.norm();
-        r1.normalize();
-        r2.normalize();
-        Vector3d r3 = r1.cross(r2);
+    ceres::Problem problem;
 
-        Vector3d t = homography.col(2);
-        t /= 0.5 * (r1Norm + r2Norm);
+    Vector3d r1 = homography.col(0), r2 = homography.col(1);
+    double r1Norm = r1.norm(), r2Norm = r2.norm();
+    r1.normalize();
+    r2.normalize();
+    Vector3d r3 = r1.cross(r2);
 
-        Matrix3d rot(3, 3);
-        rot.col(0) = r1;
-        rot.col(1) = r2;
-        rot.col(2) = r3;
+    Vector3d t = homography.col(2);
+    t /= 0.5 * (r1Norm + r2Norm);
 
-        JacobiSVD<MatrixXd> svd(rot, ComputeFullU | ComputeFullV);
-        rot = svd.matrixU() * svd.matrixV().transpose();
-        //rot = rot.jacobiSvd().solve();
+    Matrix3d rot(3, 3);
+    rot.col(0) = r1;
+    rot.col(1) = r2;
+    rot.col(2) = r3;
 
-        cv::Mat rot2(3, 3, CV_64F);
-        rot2.at<double>(0, 0) = r1(0, 0);
-        rot2.at<double>(0, 1) = r2(0, 0);
-        rot2.at<double>(0, 2) = r3(0, 0);
-        rot2.at<double>(1, 0) = r1(1, 0);
-        rot2.at<double>(1, 1) = r2(1, 0);
-        rot2.at<double>(1, 2) = r3(1, 0);
-        rot2.at<double>(2, 0) = r1(2, 0);
-        rot2.at<double>(2, 1) = r2(2, 0);
-        rot2.at<double>(2, 2) = r3(2, 0);
+    JacobiSVD<MatrixXd> svd(rot, ComputeFullU | ComputeFullV);
+    rot = svd.matrixU() * svd.matrixV().transpose();
+    //rot = rot.jacobiSvd().solve();
 
-        // Might need to do SVD or QR here if the point clouds look wrong
+    MatrixXd transformation = MatrixXd::Identity(4, 4);
+    transformation.block(0, 0, 3, 3) = rot;
+    transformation.block(0, 3, 3, 1) = t;
 
-        MatrixXd transformation = MatrixXd::Identity(4, 4);
-        transformation.block(0, 0, 3, 3) = rot;
-        transformation.block(0, 3, 3, 1) = t;
+    cv::Mat rot2(3, 3, CV_64F);
+    rot2.at<double>(0, 0) = r1(0, 0);
+    rot2.at<double>(0, 1) = r2(0, 0);
+    rot2.at<double>(0, 2) = r3(0, 0);
+    rot2.at<double>(1, 0) = r1(1, 0);
+    rot2.at<double>(1, 1) = r2(1, 0);
+    rot2.at<double>(1, 2) = r3(1, 0);
+    rot2.at<double>(2, 0) = r1(2, 0);
+    rot2.at<double>(2, 1) = r2(2, 0);
+    rot2.at<double>(2, 2) = r3(2, 0);
 
-        std::cout << "Reprojected points" << std::endl;
-        MatrixXd reprojected = transformation * objectPoints;
-        printMatrix(reprojected);
+    // Might need to do SVD or QR here if the point clouds look wrong
 
-        cv::Mat rotationTerms(3, 1, CV_64F);
-        cv::Rodrigues(rot2, rotationTerms); // TODO is this the right parameters? We use the values in rotationTerms not rotVect
+    std::cout << "Reprojected points" << std::endl;
+    MatrixXd reprojected = transformation * objectPoints;
+    printMatrix(reprojected);
 
-        //Eigen::AngleAxisd angleAxis(rot);
-        //Eigen::Vector3d rodrigues = angleAxis.axis() * angleAxis.angle();
+    cv::Mat rotationTerms(3, 1, CV_64F);
+    cv::Rodrigues(rot2, rotationTerms); // TODO is this the right parameters? We use the values in rotationTerms not rotVect
 
-        double parameters[] = {
-            rotationTerms.at<double>(0, 0),
-            rotationTerms.at<double>(1, 0),
-            rotationTerms.at<double>(2, 0),
-            //rodrigues(0), rodrigues(1), rodrigues(2),
-            transformation(0, 3),
-            transformation(1, 3),
-            transformation(2, 3)
-        };
+    //Eigen::AngleAxisd angleAxis(rot);
+    //Eigen::Vector3d rodrigues = angleAxis.axis() * angleAxis.angle();
 
-        // Set up the only cost function (also known as residual). This uses
-        // auto-differentiation to obtain the derivative (jacobian).
-        for (int i = 0; i < objectPoints.cols(); i++) {
-            Eigen::Vector4d objectPoint = objectPoints.col(i);
-            Eigen::Vector3d imagePoint = camPoints.col(i);
-            ceres::CostFunction* cost_function =
-                new ceres::AutoDiffCostFunction<CostFunctor, 2, 3, 3>(new CostFunctor(cameraIntrinsics, objectPoint, imagePoint));
-            problem.AddResidualBlock(cost_function, NULL, &parameters[0], &parameters[3]);
-        }
+    double parameters[] = {
+        rotationTerms.at<double>(0, 0),
+        rotationTerms.at<double>(1, 0),
+        rotationTerms.at<double>(2, 0),
+        //rodrigues(0), rodrigues(1), rodrigues(2),
+        transformation(0, 3),
+        transformation(1, 3),
+        transformation(2, 3)
+    };
 
-        // Run the solver!
-        ceres::Solver::Options options;
-        options.line_search_direction_type = ceres::BFGS;
-        options.minimizer_progress_to_stdout = true;
-        options.max_num_iterations = 10000;
-        ceres::Solver::Summary summary;
-        ceres::Solve(options, &problem, &summary);
+    // Set up the only cost function (also known as residual). This uses
+    // auto-differentiation to obtain the derivative (jacobian).
+    for (int i = 0; i < objectPoints.cols(); i++) {
+        Eigen::Vector4d objectPoint = objectPoints.col(i);
+        Eigen::Vector3d imagePoint = camPoints.col(i);
+        ceres::CostFunction* cost_function =
+            new ceres::AutoDiffCostFunction<CostFunctor, 2, 3, 3>(new CostFunctor(cameraIntrinsics, objectPoint, imagePoint));
+        problem.AddResidualBlock(cost_function, NULL, &parameters[0], &parameters[3]);
+    }
 
-        std::cout << summary.FullReport() << "\n";
-        std::cout << "rotationTerms[0] : " << parameters[0] << std::endl;
+    // Run the solver!
+    ceres::Solver::Options options;
+    options.line_search_direction_type = ceres::BFGS;
+    options.minimizer_progress_to_stdout = true;
+    options.max_num_iterations = 10000;
+    ceres::Solver::Summary summary;
+    ceres::Solve(options, &problem, &summary);
 
-        rotationTerms.at<double>(0, 0) = parameters[0];
-        rotationTerms.at<double>(1, 0) = parameters[1];
-        rotationTerms.at<double>(2, 0) = parameters[2];
+    std::cout << summary.FullReport() << "\n";
+    std::cout << "rotationTerms[0] : " << parameters[0] << std::endl;
 
-        cv::Matx33d outputRotationMatrix;
-        cv::Rodrigues(rotationTerms, outputRotationMatrix);
-        transformation(0, 0) = outputRotationMatrix(0, 0);
-        transformation(0, 1) = outputRotationMatrix(0, 1);
-        transformation(0, 2) = outputRotationMatrix(0, 2);
-        transformation(1, 0) = outputRotationMatrix(1, 0);
-        transformation(1, 1) = outputRotationMatrix(1, 1);
-        transformation(1, 2) = outputRotationMatrix(1, 2);
-        transformation(2, 0) = outputRotationMatrix(2, 0);
-        transformation(2, 1) = outputRotationMatrix(2, 1);
-        transformation(2, 2) = outputRotationMatrix(2, 2);
+    rotationTerms.at<double>(0, 0) = parameters[0];
+    rotationTerms.at<double>(1, 0) = parameters[1];
+    rotationTerms.at<double>(2, 0) = parameters[2];
 
-        /*rodrigues(0) = parameters[0];
-        rodrigues(1) = parameters[1];
-        rodrigues(2) = parameters[2];
-        angleAxis = AngleAxisd(rodrigues.norm(), rodrigues.normalized());
-        transformation.block(0, 0, 3, 3) = angleAxis.toRotationMatrix();*/
+    cv::Matx33d outputRotationMatrix;
+    cv::Rodrigues(rotationTerms, outputRotationMatrix);
+    transformation(0, 0) = outputRotationMatrix(0, 0);
+    transformation(0, 1) = outputRotationMatrix(0, 1);
+    transformation(0, 2) = outputRotationMatrix(0, 2);
+    transformation(1, 0) = outputRotationMatrix(1, 0);
+    transformation(1, 1) = outputRotationMatrix(1, 1);
+    transformation(1, 2) = outputRotationMatrix(1, 2);
+    transformation(2, 0) = outputRotationMatrix(2, 0);
+    transformation(2, 1) = outputRotationMatrix(2, 1);
+    transformation(2, 2) = outputRotationMatrix(2, 2);
 
-        transformation(0, 3) = parameters[3];
-        transformation(1, 3) = parameters[4];
-        transformation(2, 3) = parameters[5];
+    /*rodrigues(0) = parameters[0];
+    rodrigues(1) = parameters[1];
+    rodrigues(2) = parameters[2];
+    angleAxis = AngleAxisd(rodrigues.norm(), rodrigues.normalized());
+    transformation.block(0, 0, 3, 3) = angleAxis.toRotationMatrix();*/
 
-        return transformation;
+    transformation(0, 3) = parameters[3];
+    transformation(1, 3) = parameters[4];
+    transformation(2, 3) = parameters[5];
+
+    return transformation;
 }
 
 void printMatrix(MatrixXd mat) {
@@ -300,7 +300,14 @@ MatrixXd computeRTModelToCamera(MatrixXd modelPointsH2D, MatrixXd camPointsH2D, 
     
     MatrixXd H = isoMat.inverse() * normalizedHomography;
     MatrixXd chessboardToCameraHomography = intrinsicHomography.inverse() * H;
-    return computeUnoptimizedTransformation(chessboardToCameraHomography);
+    //return computeUnoptimizedTransformation(chessboardToCameraHomography);
+
+    MatrixXd modelPointsH3D(4, modelPointsH2D.cols());
+    modelPointsH3D.row(0) = modelPointsH2D.row(0);
+    modelPointsH3D.row(1) = modelPointsH2D.row(1);
+    // Leave row 2 as zeros
+    modelPointsH3D.row(3) = modelPointsH2D.row(2);
+    return computeTransformation(chessboardToCameraHomography, modelPointsH3D, camPointsH2D, intrinsicHomography);
 }
 
 std::string printMathematicaString(Eigen::MatrixXd A) {

@@ -151,18 +151,18 @@ Eigen::Quaterniond getArcballRotation(double startX, double startY, double endX,
 
 int main(int argc, char** argv) {
     std::vector<Eigen::MatrixXd> chessboardToCamera = calibrateFromFile("calibration.txt");
-    std::vector<KinectWrapper> wrappers;
+    std::vector<KinectWrapper*> wrappers;
 
     if (!glfwInit())
         return -1;
 
     for(int i = 0; i < chessboardToCamera.size(); i++) {
         KFRViewer *frameRecipient = new KFRViewer;
-        KinectWrapper wrapper(i, *frameRecipient);
+        KinectWrapper* wrapper = new KinectWrapper(i, *frameRecipient);
         wrappers.push_back(wrapper);
-        k4a_calibration_t calib = wrapper.getCalibration();
+        k4a_calibration_t calib = wrapper->getCalibration();
         frameRecipient->setCalibration(calib);
-
+        wrapper->capture();
         frameRecipients.push_back(frameRecipient);
         rigidTransformations.push_back(chessboardToCamera[0] * chessboardToCamera[i].inverse());
     }
@@ -208,7 +208,7 @@ int main(int argc, char** argv) {
 
     while (!glfwWindowShouldClose(window)) {
         for(int i = 0; i < wrappers.size(); i++) {
-            wrappers[i].capture();
+            //wrappers[i]->capture();
         }
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
