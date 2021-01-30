@@ -12,6 +12,7 @@ message(STATUS ${CMAKE_SOURCE_DIR})
 SET(KINECT_WRAPPER_SOURCES
     src/KinectWrapper.cpp
     src/KFRDisplay.cpp
+    src/KFRRecord.cpp
 #    src/KFRBodyTracker.cpp
     src/conversions.cpp
 )
