@@ -23,10 +23,13 @@ KinectWrapper::KinectWrapper(uint8_t deviceIndex, K4ACaptureRecipient &kfr) :
     // cout << "fy: " << calibration.color_camera_calibration.intrinsics.parameters.param.fy << endl;
 
     _config.camera_fps = K4A_FRAMES_PER_SECOND_30;
-    _config.color_format = K4A_IMAGE_FORMAT_COLOR_BGRA32;
+    //_config.color_format = K4A_IMAGE_FORMAT_COLOR_BGRA32;
     _config.color_resolution = K4A_COLOR_RESOLUTION_2160P;
     _config.depth_mode = K4A_DEPTH_MODE_NFOV_UNBINNED;
     _config.synchronized_images_only = true;
+
+    // Recipient specific config
+    _kfr.getDevice(_device, _config);
 
     // try to start cameras
     if (K4A_RESULT_SUCCEEDED != k4a_device_start_cameras(_device, &_config))

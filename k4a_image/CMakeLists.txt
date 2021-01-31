@@ -50,6 +50,11 @@ add_executable(capture-corners
     ${KINECT_WRAPPER_SOURCES}
 )
 
+add_executable(record
+    src/record.cpp
+    ${KINECT_WRAPPER_SOURCES}
+)
+
 add_library(sockets SHARED src/sockets.cpp)
 
 include_directories(
@@ -115,5 +120,12 @@ target_link_libraries(capture-corners
     ${Eigen3_LIBS}
     ceres
     k4a
+    k4arecord
+)
+
+target_link_libraries(record
+    ${OpenCV_LIBS} 
+    k4a
+    k4abt
     k4arecord
 )
