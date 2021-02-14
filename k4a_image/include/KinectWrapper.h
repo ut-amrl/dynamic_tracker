@@ -12,6 +12,7 @@ class KinectWrapper
 {
 public:
     KinectWrapper(uint8_t deviceIndex, K4ACaptureRecipient &kfr);
+    KinectWrapper(uint8_t deviceIndex, k4a_wired_sync_mode_t syncMode, K4ACaptureRecipient &kfr);
     ~KinectWrapper();
 
     bool capture();

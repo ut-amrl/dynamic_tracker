@@ -1,4 +1,5 @@
 #include "KFRDisplay.h"
+#include "KFRRecord.h"
 #include "KinectWrapper.h"
 #include <iostream>
 #include <ctime>
@@ -9,6 +10,7 @@
 #include <vision_geometry/HomographyShortcuts.h>
 #include <vision_geometry/LinearAlgebraShortcuts.h>
 #include <vision_geometry/HomCartShortcuts.h>
+#include <unistd.h>
 
 using namespace std;
 using namespace cv;
@@ -32,9 +34,15 @@ Mat scale(Mat in, double scaleFactor)
 
 int main()
 {
+  KFRRecord kfrRecord("/home/fri/Documents/henry/dynamic_tracker/k4a_image/test.mkv");
   KFRDisplay kfrDisplay(2160, 3840);
-  KinectWrapper kinectWrapper(0, kfrDisplay);
-  kinectWrapper.capture();
+  KinectWrapper kinectWrapper(0, kfrRecord);
+  int n = 240;
+  while(n--){
+    kinectWrapper.capture();
+    cout << n << endl;
+  }
+  
   //while(kinectWrapper.capture()) {}
 
   /*

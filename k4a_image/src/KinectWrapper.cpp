@@ -8,6 +8,11 @@ using namespace std;
 using namespace cv;
 
 KinectWrapper::KinectWrapper(uint8_t deviceIndex, K4ACaptureRecipient &kfr) :
+    KinectWrapper(deviceIndex, K4A_WIRED_SYNC_MODE_STANDALONE, kfr)
+{
+}
+
+KinectWrapper::KinectWrapper(uint8_t deviceIndex, k4a_wired_sync_mode_t syncMode, K4ACaptureRecipient &kfr) :
     _device(NULL), _config(K4A_DEVICE_CONFIG_INIT_DISABLE_ALL), _kfr(kfr)
 {
     if (K4A_RESULT_SUCCEEDED != k4a_device_open(deviceIndex, &_device))
@@ -15,15 +20,9 @@ KinectWrapper::KinectWrapper(uint8_t deviceIndex, K4ACaptureRecipient &kfr) :
         cout << "aborting" << endl;
         abort();
     }
-    k4a_device_get_calibration(_device, K4A_DEPTH_MODE_NFOV_UNBINNED, K4A_COLOR_RESOLUTION_2160P, &_calibration);
-    // cout << "found " << calibration.color_camera_calibration.intrinsics.parameter_count << " intrinsic params" << endl;
-    // cout << "cx: " << calibration.color_camera_calibration.intrinsics.parameters.param.cx << endl;
-    // cout << "cy: " << calibration.color_camera_calibration.intrinsics.parameters.param.cy << endl;
-    // cout << "fx: " << calibration.color_camera_calibration.intrinsics.parameters.param.fx << endl;
-    // cout << "fy: " << calibration.color_camera_calibration.intrinsics.parameters.param.fy << endl;
-
+    
     _config.camera_fps = K4A_FRAMES_PER_SECOND_30;
-    //_config.color_format = K4A_IMAGE_FORMAT_COLOR_BGRA32;
+    _config.wired_sync_mode = syncMode;
     _config.color_resolution = K4A_COLOR_RESOLUTION_2160P;
     _config.depth_mode = K4A_DEPTH_MODE_NFOV_UNBINNED;
     _config.synchronized_images_only = true;

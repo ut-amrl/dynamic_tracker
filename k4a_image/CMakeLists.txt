@@ -12,7 +12,6 @@ message(STATUS ${CMAKE_SOURCE_DIR})
 SET(KINECT_WRAPPER_SOURCES
     src/KinectWrapper.cpp
     src/KFRDisplay.cpp
-    src/KFRRecord.cpp
 #    src/KFRBodyTracker.cpp
     src/conversions.cpp
 )
@@ -52,6 +51,8 @@ add_executable(capture-corners
 
 add_executable(record
     src/record.cpp
+    src/KFRRecord.cpp
+    src/MultiRecorder.cpp
     ${KINECT_WRAPPER_SOURCES}
 )
 
@@ -126,6 +127,5 @@ target_link_libraries(capture-corners
 target_link_libraries(record
     ${OpenCV_LIBS} 
     k4a
-    k4abt
     k4arecord
 )
