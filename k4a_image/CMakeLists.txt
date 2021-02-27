@@ -19,10 +19,12 @@ SET(KINECT_WRAPPER_SOURCES
 SET(CALIBRATOR_SOURCES
     src/calibration.cpp
     src/KFRCalibration.cpp
+    src/CalibrationManager.cpp
 )
 
 add_executable(k4a_image
     src/main.cpp
+    src/CalibrationManager.cpp
     ${KINECT_WRAPPER_SOURCES}
 )
 
@@ -80,7 +82,7 @@ target_link_libraries(k4a_image
 	${VISION_GEOMETRY_LIBRARY}
     ceres
     k4a
-    k4abt
+    #k4abt
     k4arecord
 )
 
@@ -90,7 +92,7 @@ target_link_libraries(viewer
 	${VISION_GEOMETRY_LIBRARY}
     ceres
     k4a
-    k4abt
+    #k4abt
     k4arecord
     GL
     GLU

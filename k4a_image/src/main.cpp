@@ -12,6 +12,8 @@
 #include <vision_geometry/HomCartShortcuts.h>
 #include <unistd.h>
 
+#include "CalibrationManager.h"
+
 using namespace std;
 using namespace cv;
 using namespace Eigen;
@@ -32,6 +34,14 @@ Mat scale(Mat in, double scaleFactor)
   return scaled;
 }
 
+Eigen::MatrixXd translation(double x, double y, double z) {
+  Eigen::MatrixXd mat = Eigen::MatrixXd::Identity(4, 4);
+  mat(0, 3) = x;
+  mat(1, 3) = y;
+  mat(2, 3) = z;
+  return mat;
+}
+
 int main()
 {
   KFRRecord kfrRecord("/home/fri/Documents/henry/dynamic_tracker/k4a_image/test.mkv");
@@ -42,6 +52,18 @@ int main()
     kinectWrapper.capture();
     cout << n << endl;
   }
+
+  /*
+  vector<Measurement> measurements;
+  measurements.push_back(Measurement(Anchor(MARKER, 0), Anchor(CAMERA, 0), translation(-2, -3, 0)));
+  measurements.push_back(Measurement(Anchor(MARKER, 0), Anchor(CAMERA, 1), translation(1, -1, 0)));
+  measurements.push_back(Measurement(Anchor(MARKER, 1), Anchor(CAMERA, 1), translation(-1, -1, 0)));
+  measurements.push_back(Measurement(Anchor(MARKER, 1), Anchor(CAMERA, 2), translation(2, -2, 0)));
+  map<Anchor, MatrixXd> poses = consolidateMeasurements(measurements).posesWithOrigin(Anchor(CAMERA, 0));
+  cout << "Camera 1:\n" << poses[Anchor(CAMERA, 1)] << std::endl;
+  cout << "Camera 2:\n" << poses[Anchor(CAMERA, 2)] << std::endl;
+  cout << "Marker 0:\n" << poses[Anchor(MARKER, 0)] << std::endl;
+  */
   
   //while(kinectWrapper.capture()) {}
 
