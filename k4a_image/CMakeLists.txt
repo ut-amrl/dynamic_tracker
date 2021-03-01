@@ -24,6 +24,8 @@ SET(CALIBRATOR_SOURCES
 
 add_executable(k4a_image
     src/main.cpp
+    src/KFRRecord.cpp
+    src/MultiRecorder.cpp
     src/CalibrationManager.cpp
     ${KINECT_WRAPPER_SOURCES}
 )
