@@ -5,8 +5,10 @@
 #include <vector>
 
 struct Capture {
-    uint64_t deviceTime;
-    uint64_t sysTime;
+    int deviceId;
+    uint64_t deviceFrame;   // Frame number on this device
+    uint64_t deviceTime;    // Time of capture according to camera
+    uint64_t sysTime;       // Time received over bus
 };
 
 class KFRRecord;
@@ -17,6 +19,7 @@ public:
     ~MultiRecorder();
     int registerRecorder(KFRRecord*);
     void receiveFrame(int device, k4a_capture_t capture);
+    void printCaptureHistory();
 
 private:
     int _devices;

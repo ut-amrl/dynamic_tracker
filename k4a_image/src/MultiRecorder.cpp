@@ -1,4 +1,5 @@
 #include "MultiRecorder.h"
+#include <ostream>
 
 using namespace std;
 
@@ -30,8 +31,34 @@ void MultiRecorder::receiveFrame(int device, k4a_capture_t capture){
     uint64_t sysTime = k4a_image_get_system_timestamp_nsec(image);
 
     // Add to timing data for this frame to device history (should be thread-safe)
-    _captureHistory[device].push_back({deviceTime, sysTime});
+    _captureHistory[device].push_back({device, _captureHistory[device].size(), deviceTime, sysTime});
 
     k4a_image_release(image);
     k4a_capture_release(capture);
+}
+
+void MultiRecorder::printCaptureHistory(){
+    ofstream outfile;  
+    outfile.open("capture_history");
+
+    vector<Capture> fullHistory;
+    for(vector<Capture>& v : _captureHistory){
+        // Append together
+        fullHistory.insert(fullHistory.end(), v.begin(), v.end());
+    }
+    // Sort the overall history by the time on the local device - offsets should be 0
+    sort(fullHistory.begin(), fullHistory.end(), 
+        [](const Capture& a, const Capture& b) -> bool
+        {
+            return a.deviceTime < b.deviceTime;
+        });
+    
+    for(int i = 0; i < fullHistory.size(); i++){
+        Capture c = fullHistory[i];
+        // Format (space separated integers)
+        // overall frame number, device id, device frame number, device timestamp, overall timestamp
+        outfile << i << " " << c.deviceId << " " << c.deviceFrame << " " << c.deviceTime << " " << c.sysTime << endl;
+    }
+
+    outfile.close();
 }

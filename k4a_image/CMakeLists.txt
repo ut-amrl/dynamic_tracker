@@ -132,4 +132,5 @@ target_link_libraries(record
     ${OpenCV_LIBS} 
     k4a
     k4arecord
+    -pthread
 )
