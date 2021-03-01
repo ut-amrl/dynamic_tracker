@@ -12,7 +12,7 @@ message(STATUS ${CMAKE_SOURCE_DIR})
 SET(KINECT_WRAPPER_SOURCES
     src/KinectWrapper.cpp
     src/KFRDisplay.cpp
-#    src/KFRBodyTracker.cpp
+    src/KFRBodyTracker.cpp
     src/conversions.cpp
 )
 
@@ -84,7 +84,7 @@ target_link_libraries(k4a_image
 	${VISION_GEOMETRY_LIBRARY}
     ceres
     k4a
-    #k4abt
+    k4abt
     k4arecord
 )
 
@@ -94,7 +94,7 @@ target_link_libraries(viewer
 	${VISION_GEOMETRY_LIBRARY}
     ceres
     k4a
-    #k4abt
+    k4abt
     k4arecord
     GL
     GLU
@@ -126,11 +126,13 @@ target_link_libraries(capture-corners
     ceres
     k4a
     k4arecord
+    k4abt
 )
 
 target_link_libraries(record
     ${OpenCV_LIBS} 
     k4a
+    k4abt
     k4arecord
     -pthread
 )
