@@ -8,9 +8,11 @@
 
 class KFRBodyTracker : public K4ACaptureRecipient {
 public:
-    KFRBodyTracker(k4a_calibration_t sensor_calibration, bool realTime = true);
+    KFRBodyTracker(bool realTime = true);
     ~KFRBodyTracker();
     void receiveFrame(k4a_capture_t capture);
+    void getDevice(k4a_device_t device, k4a_device_configuration_t config) override;
+
 protected:
     k4abt_tracker_t _tracker;
     bool _realTime;

@@ -1,16 +1,25 @@
 #include "KFRBodyTracker.h"
 
-KFRBodyTracker::KFRBodyTracker(k4a_calibration_t sensor_calibration, bool realTime)
+KFRBodyTracker::KFRBodyTracker(bool realTime)
     : _realTime(realTime)
 {
-    k4abt_tracker_configuration_t tracker_config = K4ABT_TRACKER_CONFIG_DEFAULT;
-    k4abt_tracker_create(&sensor_calibration, tracker_config, &_tracker);
 }
 
 KFRBodyTracker::~KFRBodyTracker()
 {
     k4abt_tracker_shutdown(_tracker);
     k4abt_tracker_destroy(_tracker);
+}
+
+void KFRBodyTracker::getDevice(k4a_device_t device, k4a_device_configuration_t config){
+    k4a_calibration_t sensor_calibration;
+    if (K4A_RESULT_SUCCEEDED != k4a_device_get_calibration(device, config.depth_mode, K4A_COLOR_RESOLUTION_OFF, &sensor_calibration))
+    {
+        printf("Get depth camera calibration failed!\n");
+        return;
+    }
+    k4abt_tracker_configuration_t tracker_config = K4ABT_TRACKER_CONFIG_DEFAULT;
+    k4abt_tracker_create(&sensor_calibration, tracker_config, &_tracker);
 }
 
 void KFRBodyTracker::receiveFrame(k4a_capture_t capture)
