@@ -22,6 +22,11 @@ void KFRBodyTracker::getDevice(k4a_device_t device, k4a_device_configuration_t c
     k4abt_tracker_create(&sensor_calibration, tracker_config, &_tracker);
 }
 
+void KFRBodyTracker::getCalibration(k4a_calibration_t calib){
+    k4abt_tracker_configuration_t tracker_config = K4ABT_TRACKER_CONFIG_DEFAULT;
+    k4abt_tracker_create(&calib, tracker_config, &_tracker);
+}
+
 void KFRBodyTracker::receiveFrame(k4a_capture_t capture)
 {
     k4a_capture_reference(capture);

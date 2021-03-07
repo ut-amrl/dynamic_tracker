@@ -12,7 +12,16 @@ PlaybackWrapper::PlaybackWrapper(const char* path, K4ACaptureRecipient &kfr): _k
     if (k4a_playback_open(path, &_playback) != K4A_RESULT_SUCCEEDED)
     {
         printf("Failed to open recording\n");
+        return;
     }
+
+    k4a_calibration_t calib;
+    if (k4a_playback_get_calibration(_playback, &calib) != K4A_RESULT_SUCCEEDED)
+    {
+        printf("Failed to get playback calibration\n");
+        return;
+    }
+    _kfr.getCalibration(calib);
 }
 
 
