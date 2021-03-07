@@ -18,9 +18,9 @@ public:
     bool capture();
     k4a_calibration_intrinsics_t getColorCameraIntrinsics();
     k4a_calibration_t getCalibration();
-    //void display();
 
     static size_t getNumCameras();
+    static void seeConnectedCameras();
 
 protected:
     k4a_device_t _device;

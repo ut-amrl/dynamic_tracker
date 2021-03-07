@@ -26,7 +26,7 @@ int MultiRecorder::registerRecorder(KFRRecord*){
 void MultiRecorder::receiveFrame(int device, k4a_capture_t capture){
     k4a_capture_reference(capture);
     // Must get image to find timestamps
-    k4a_image_t image = k4a_capture_get_depth_image(capture);
+    k4a_image_t image = k4a_capture_get_color_image(capture);
     uint64_t deviceTime = k4a_image_get_device_timestamp_usec(image);
     uint64_t sysTime = k4a_image_get_system_timestamp_nsec(image);
 

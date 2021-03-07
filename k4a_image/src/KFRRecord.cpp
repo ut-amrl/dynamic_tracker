@@ -28,7 +28,7 @@ void KFRRecord::receiveFrame(k4a_capture_t capture) {
     }
     if (K4A_RESULT_SUCCEEDED != k4a_record_write_capture(_recordingHandle, capture))
     {
-        cout << "Failed to initialize recording handle" << endl;
+        cout << "Failed to write capture" << endl;
     }
     k4a_capture_release(capture);
 }

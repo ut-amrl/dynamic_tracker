@@ -26,7 +26,7 @@ void* threadWork(void* args){
 void parallelCapture(){
     const int numDevices = 2;
     // Specify the usb device numbers' initialization order, last device will be master
-    int usbIndex[numDevices] = {1, 4};
+    int usbIndex[numDevices] = {3, 2};
     pthread_t tid[numDevices];
     void *status;
 
@@ -46,12 +46,15 @@ void parallelCapture(){
 
 int main()
 {
+    // KinectWrapper::seeConnectedCameras();
+
+    // 3 2 - desk
     MultiRecorder mr;
     KFRRecord kfr("/home/fri/Documents/henry/dynamic_tracker/k4a_image/subordinate.mkv", &mr);
-    KinectWrapper sub(1, K4A_WIRED_SYNC_MODE_SUBORDINATE, kfr);
-
+    KinectWrapper sub(3, K4A_WIRED_SYNC_MODE_SUBORDINATE, kfr);
+    cout << "---" << endl;
     KFRRecord kfrRecord("/home/fri/Documents/henry/dynamic_tracker/k4a_image/main.mkv", &mr);
-    KinectWrapper kinectWrapper(3, K4A_WIRED_SYNC_MODE_MASTER, kfrRecord);
+    KinectWrapper kinectWrapper(2, K4A_WIRED_SYNC_MODE_MASTER, kfrRecord);
 
     // Capture some frames
     int n = 150;
@@ -61,10 +64,12 @@ int main()
         sub.capture();
         cout << n << endl;
     }
+    // parallelCapture();
 
     kfrRecord.close();
     kfr.close();
 
+    mr.printCaptureHistory();
     // TODO add multiple camera test - psuedocode
     // MultiRecorder mr;
     // for all devices:
@@ -73,16 +78,5 @@ int main()
     //    KinectWrapper kw(device, kfr)
     //    in parallel kw.capture() N times
         
-    return 0;
-}
-
-int playback()
-{
-    k4a_playback_t playback_handle = NULL;
-    if (k4a_playback_open("/home/fri/Documents/henry/dynamic_tracker/k4a_image/test.mkv", &playback_handle) != K4A_RESULT_SUCCEEDED)
-    {
-        printf("Failed to open recording\n");
-        return 1;
-    }
     return 0;
 }
