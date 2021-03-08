@@ -6,6 +6,7 @@ find_package(OpenCV REQUIRED)
 find_package(Eigen3 REQUIRED)
 
 find_library(VISION_GEOMETRY_LIBRARY vision_geometry HINTS ${CMAKE_SOURCE_DIR}/share/vision_geometry/build/)
+find_library(APRIL_TAG_LIBRARY apriltag HINTS ${CMAKE_SOURCE_DIR}/share/apriltag/build/)
 
 message(STATUS ${CMAKE_SOURCE_DIR})
 
@@ -60,11 +61,16 @@ add_executable(record
     ${KINECT_WRAPPER_SOURCES}
 )
 
+add_executable(apriltag_demo
+    src/apriltag_demo.cpp
+)
+
 add_library(sockets SHARED src/sockets.cpp)
 
 include_directories(
 	include
 	share/vision_geometry/include/
+    share/apriltag/
     ${Ceres_INCLUDE_DIR}
     ${EIGEN3_INCLUDE_DIR}
 	/usr/include/eigen3
@@ -135,4 +141,9 @@ target_link_libraries(record
     k4abt
     k4arecord
     -pthread
+)
+
+target_link_libraries(apriltag_demo
+    ${APRIL_TAG_LIBRARY} 
+    ${OpenCV_LIBS} 
 )

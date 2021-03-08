@@ -4,3 +4,6 @@
 [submodule "k4a_image/share/vision_geometry"]
 	path = k4a_image/share/vision_geometry
 	url = git@github.com:utexas-bwi/vision_geometry.git
+[submodule "k4a_image/share/apriltag"]
+	path = k4a_image/share/apriltag
+	url = https://github.com/AprilRobotics/apriltag.git
