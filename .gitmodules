@@ -7,9 +7,3 @@
 [submodule "k4a_image/share/apriltag"]
 	path = k4a_image/share/apriltag
 	url = https://github.com/AprilRobotics/apriltag.git
-[submodule "k4a_image/share/nlohmann_json_cmake_fetchcontent"]
-	path = k4a_image/share/nlohmann_json_cmake_fetchcontent
-	url = git@github.com:ArthurSonzogni/nlohmann_json_cmake_fetchcontent.git
-[submodule "k4a_image/share/nlohman_json"]
-	path = k4a_image/share/nlohmann_json
-	url = git@github.com:nlohmann/json.git
