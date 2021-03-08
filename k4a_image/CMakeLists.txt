@@ -7,6 +7,11 @@ find_package(Eigen3 REQUIRED)
 
 find_library(VISION_GEOMETRY_LIBRARY vision_geometry HINTS ${CMAKE_SOURCE_DIR}/share/vision_geometry/build/)
 find_library(APRIL_TAG_LIBRARY apriltag HINTS ${CMAKE_SOURCE_DIR}/share/apriltag/build/)
+#find_library(JSON_LIBRARY nlohmann_json_cmake_fetchcontent HINTS ${CMAKE_SOURCE_DIR}/share/nlohmann_json_cmake_fetchcontent/build)
+#find_library(JSON_LIBRARY nlohman_json HINTS ${CMAKE_SOURCE_DIR}/share/json/build)
+
+set(JSON_BuildTests OFF CACHE INTERNAL "")
+add_subdirectory(share/nlohmann_json)
 
 message(STATUS ${CMAKE_SOURCE_DIR})
 
@@ -157,6 +162,7 @@ target_link_libraries(body-tracker
     k4a
     k4abt
     k4arecord
+    nlohmann_json::nlohmann_json
 )
 
 target_link_libraries(apriltag_demo

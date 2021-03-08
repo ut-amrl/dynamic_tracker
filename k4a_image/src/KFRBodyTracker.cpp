@@ -1,7 +1,8 @@
 #include "KFRBodyTracker.h"
 
-KFRBodyTracker::KFRBodyTracker(bool realTime)
-    : _realTime(realTime)
+
+KFRBodyTracker::KFRBodyTracker(bool realTime, bool writeToFile)
+    : _realTime(realTime), _writeToFile(writeToFile)
 {
 }
 
