@@ -48,6 +48,7 @@ void KFRBodyTracker::receiveFrame(k4a_capture_t capture)
     }
 
     // do stuff
+    printf("Num bodies in frame: %d\n", k4abt_frame_get_num_bodies(body_frame));
     for (int i = 0; i < k4abt_frame_get_num_bodies(body_frame); i++) {
         unsigned int id = k4abt_frame_get_body_id(body_frame, i);
         k4abt_skeleton_t skeleton;

@@ -65,6 +65,15 @@ add_executable(apriltag_demo
     src/apriltag_demo.cpp
 )
 
+add_executable(body-tracker
+    src/bodyTracking.cpp
+    src/KFRRecord.cpp
+    src/PlaybackWrapper.cpp
+    src/KFRBodyTracker.cpp
+    src/MultiRecorder.cpp
+    ${KINECT_WRAPPER_SOURCES}
+)
+
 add_library(sockets SHARED src/sockets.cpp)
 
 include_directories(
@@ -141,6 +150,13 @@ target_link_libraries(record
     k4abt
     k4arecord
     -pthread
+)
+
+target_link_libraries(body-tracker
+    ${OpenCV_LIBS}
+    k4a
+    k4abt
+    k4arecord
 )
 
 target_link_libraries(apriltag_demo
