@@ -32,6 +32,7 @@ public:
 };
 
 // Convert apriltag_pose_t to Eigen matrix
+/*
 Eigen::MatrixXd aprilTagPoseToEigen(apriltag_pose_t *pose)
 {
     Eigen::MatrixXd res = Eigen::MatrixXd::Identity(4, 4);
@@ -49,5 +50,6 @@ Eigen::MatrixXd aprilTagPoseToEigen(apriltag_pose_t *pose)
     }
     return res;
 }
+*/
 
 #endif

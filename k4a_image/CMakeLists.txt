@@ -30,6 +30,7 @@ SET(CALIBRATOR_SOURCES
 
 add_executable(k4a_image
     src/main.cpp
+    src/KFRAprilTags.cpp
     src/KFRRecord.cpp
     src/MultiRecorder.cpp
     src/CalibrationManager.cpp
@@ -103,6 +104,7 @@ target_link_libraries(k4a_image
     ${Ceres_LIBS}
     ${OpenCV_LIBS} 
 	${VISION_GEOMETRY_LIBRARY}
+    ${APRIL_TAG_LIBRARY} 
     ceres
     k4a
     k4abt

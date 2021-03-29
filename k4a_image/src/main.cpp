@@ -1,5 +1,6 @@
 #include "KFRDisplay.h"
 #include "KFRRecord.h"
+#include "KFRAprilTags.h"
 #include "KinectWrapper.h"
 #include <iostream>
 #include <ctime>
@@ -44,9 +45,10 @@ Eigen::MatrixXd translation(double x, double y, double z) {
 
 int main()
 {
-  KFRRecord kfrRecord("/home/fri/Documents/henry/dynamic_tracker/k4a_image/test.mkv");
+  //KFRRecord kfrRecord("/home/fri/Documents/henry/dynamic_tracker/k4a_image/test.mkv");
+  KFRAprilTags kfrAprilTags;
   KFRDisplay kfrDisplay(2160, 3840);
-  KinectWrapper kinectWrapper(0, kfrRecord);
+  KinectWrapper kinectWrapper(0, kfrAprilTags);
   int n = 240;
   while(n--){
     kinectWrapper.capture();
