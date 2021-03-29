@@ -85,6 +85,7 @@ include_directories(
 	include
 	share/vision_geometry/include/
     share/apriltag/
+    share/nlohmann_json/include/
     ${Ceres_INCLUDE_DIR}
     ${EIGEN3_INCLUDE_DIR}
 	/usr/include/eigen3

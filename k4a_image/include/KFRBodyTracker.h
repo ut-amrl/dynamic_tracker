@@ -8,7 +8,7 @@
 
 class KFRBodyTracker : public K4ACaptureRecipient {
 public:
-    KFRBodyTracker(bool realTime = true, bool writeToFile = false);
+    KFRBodyTracker(const char* path, bool realTime = true, bool writeToFile = false);
     ~KFRBodyTracker();
     void receiveFrame(k4a_capture_t capture);
     void getDevice(k4a_device_t device, k4a_device_configuration_t config) override;
@@ -18,6 +18,7 @@ protected:
     k4abt_tracker_t _tracker;
     bool _realTime;
     bool _writeToFile;
+    const char* _path;
 };
 
 #endif

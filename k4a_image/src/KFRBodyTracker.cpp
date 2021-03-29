@@ -1,8 +1,13 @@
 #include "KFRBodyTracker.h"
+#include <nlohmann/json.hpp>
+#include <iostream>
+#include <fstream>
+#include <vector>
 
 
-KFRBodyTracker::KFRBodyTracker(bool realTime, bool writeToFile)
-    : _realTime(realTime), _writeToFile(writeToFile)
+
+KFRBodyTracker::KFRBodyTracker(const char* path, bool realTime, bool writeToFile)
+    : _realTime(realTime), _writeToFile(writeToFile), _path(path)
 {
 }
 
@@ -30,6 +35,11 @@ void KFRBodyTracker::getCalibration(k4a_calibration_t calib){
 
 void KFRBodyTracker::receiveFrame(k4a_capture_t capture)
 {
+    std::fstream outFile;
+    if(this->_writeToFile){
+        outFile.open(this->_path, std::fstream::binary | std::fstream::app);
+    }
+
     k4a_capture_reference(capture);
     // Process real time or synchronously
     int wait = _realTime ? 0 : K4A_WAIT_INFINITE;
@@ -49,7 +59,39 @@ void KFRBodyTracker::receiveFrame(k4a_capture_t capture)
     }
 
     // do stuff
+    if(this->_writeToFile){
+        uint64_t timestamp = k4abt_frame_get_device_timestamp_usec(body_frame);
+        outFile << timestamp;
+        std::cout << "timestamp: " + std::to_string(timestamp) << std::endl;
+        uint32_t numBodies = k4abt_frame_get_num_bodies(body_frame);
+        outFile << numBodies;
+        std::cout << "num bodies: " + std::to_string(numBodies) << std::endl;
+        //loop through each body
+        for(int i = 0; i < numBodies; i++){
+            //array of vectors for storing positions and orientations of each joint
+            std::vector<float> positions[(int)K4ABT_JOINT_COUNT];
+            std::vector<float> orientations[(int)K4ABT_JOINT_COUNT];
+            //get skeleton of 1 body if any
+            k4abt_skeleton_t skeleton;
+            k4abt_frame_get_body_skeleton(body_frame, i, &skeleton);
+            uint32_t body_id = k4abt_frame_get_body_id(body_frame, i);
+            outFile << body_id;
+            for(int j = 0; j < (int)K4ABT_JOINT_COUNT; j++){
+                positions[j].push_back(skeleton.joints[j].position.xyz.x);
+                positions[j].push_back(skeleton.joints[j].position.xyz.y);
+                positions[j].push_back(skeleton.joints[j].position.xyz.z);
+
+                orientations[j].push_back(skeleton.joints[j].orientation.wxyz.w);
+                orientations[j].push_back(skeleton.joints[j].orientation.wxyz.x);
+                orientations[j].push_back(skeleton.joints[j].orientation.wxyz.y);
+                orientations[j].push_back(skeleton.joints[j].orientation.wxyz.z);
+            }
+        }
+
+
+    }
     printf("Num bodies in frame: %d\n", k4abt_frame_get_num_bodies(body_frame));
+    /*
     for (int i = 0; i < k4abt_frame_get_num_bodies(body_frame); i++) {
         unsigned int id = k4abt_frame_get_body_id(body_frame, i);
         k4abt_skeleton_t skeleton;
@@ -57,7 +99,7 @@ void KFRBodyTracker::receiveFrame(k4a_capture_t capture)
         k4a_image_t body_index_map = k4abt_frame_get_body_index_map(body_frame);
         
         
-    }
+    }*/
 
     k4abt_frame_release(body_frame);
 }
