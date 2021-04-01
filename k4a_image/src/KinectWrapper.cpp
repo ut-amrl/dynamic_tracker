@@ -26,6 +26,7 @@ KinectWrapper::KinectWrapper(uint8_t deviceIndex, k4a_wired_sync_mode_t syncMode
     _config.color_resolution = K4A_COLOR_RESOLUTION_2160P;
     _config.depth_mode = K4A_DEPTH_MODE_NFOV_UNBINNED;
     _config.synchronized_images_only = true;
+    _config.color_format = K4A_IMAGE_FORMAT_COLOR_BGRA32; // TODO make this MJPG, update kinect_to_cv to support it
 
     // Recipient specific config
     _kfr.getDevice(_device, _config);
