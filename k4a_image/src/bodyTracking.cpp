@@ -2,15 +2,28 @@
 #include <k4arecord/playback.h>
 #include <cstdio>
 #include <cstdlib>
+#include <string>
 #include <opencv2/opencv.hpp>
 #include "KFRBodyTracker.h"
 #include "KFRDisplay.h"
 #include "KinectWrapper.h"
 
-int main (){
-    KFRBodyTracker kfrBodyTracker("/home/fri/Documents/vijay/dynamic_tracker/k4a_image/pranav2.bt",false, true);
-    PlaybackWrapper playback("/home/fri/Documents/vijay/dynamic_tracker/k4a_image/main_pranav2.mkv", kfrBodyTracker);
-    int n = 1000;
+int main (int argc, char *argv[]){
+    std::string saveFile = "";
+    std::string mkvFile = "";
+    if(argc == 2){
+        saveFile = argv[1];
+    }
+    if(argc == 3){
+        mkvFile = argv[2];
+    }else{
+        saveFile = "../pranav2.bt";
+        mkvFile = "../main_pranav2.mkv";
+    }
+
+    KFRBodyTracker kfrBodyTracker(&saveFile[0],false, true);
+    PlaybackWrapper playback(&mkvFile[0], kfrBodyTracker);
+    int n = 200;
     while(n--){
         playback.capture();
     }

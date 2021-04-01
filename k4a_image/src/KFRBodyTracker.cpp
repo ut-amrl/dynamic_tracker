@@ -3,12 +3,18 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <stdio.h>
 
 
 
 KFRBodyTracker::KFRBodyTracker(const char* path, bool realTime, bool writeToFile)
     : _realTime(realTime), _writeToFile(writeToFile), _path(path)
 {
+    std::ifstream infile(path);
+    if(infile.good()){
+        remove(path);
+        std::cout << "removed old bt file" << std::endl;
+    }
 }
 
 KFRBodyTracker::~KFRBodyTracker()
