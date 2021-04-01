@@ -19,6 +19,9 @@ protected:
     bool _realTime;
     bool _writeToFile;
     const char* _path;
+
+private:
+    void writeArrayToFile(std::vector<float> positions[], std::fstream &outFile);
 };
 
 #endif

@@ -33,6 +33,16 @@ void KFRBodyTracker::getCalibration(k4a_calibration_t calib){
     k4abt_tracker_create(&calib, tracker_config, &_tracker);
 }
 
+void KFRBodyTracker::writeArrayToFile(std::vector<float> positions[], std::fstream &outFile){
+    std::fstream &stream = outFile;
+    for(int j = 0; j < (int)K4ABT_JOINT_COUNT; j++){
+        std::vector<float> temp = positions[j];
+        for(std::vector<float>::const_iterator i = temp.begin(); i != temp.end(); ++i) {
+            stream << *i;
+        }
+    }
+}
+
 void KFRBodyTracker::receiveFrame(k4a_capture_t capture)
 {
     std::fstream outFile;
@@ -86,20 +96,12 @@ void KFRBodyTracker::receiveFrame(k4a_capture_t capture)
                 orientations[j].push_back(skeleton.joints[j].orientation.wxyz.y);
                 orientations[j].push_back(skeleton.joints[j].orientation.wxyz.z);
             }
+            this->writeArrayToFile(positions, outFile);
+            this->writeArrayToFile(orientations, outFile);
+            //std::cout << positions[0].at(0) << std::endl;
         }
 
 
     }
-    printf("Num bodies in frame: %d\n", k4abt_frame_get_num_bodies(body_frame));
-    /*
-    for (int i = 0; i < k4abt_frame_get_num_bodies(body_frame); i++) {
-        unsigned int id = k4abt_frame_get_body_id(body_frame, i);
-        k4abt_skeleton_t skeleton;
-        k4abt_frame_get_body_skeleton(body_frame, i, &skeleton);
-        k4a_image_t body_index_map = k4abt_frame_get_body_index_map(body_frame);
-        
-        
-    }*/
-
     k4abt_frame_release(body_frame);
 }
