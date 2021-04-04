@@ -15,6 +15,16 @@ KFRBodyTracker::KFRBodyTracker(const char* path, bool realTime, bool writeToFile
         remove(path);
         std::cout << "removed old bt file" << std::endl;
     }
+
+    std::fstream outFile;
+    if(this->_writeToFile){
+        outFile.open(this->_path, std::fstream::binary | std::fstream::app);
+        outFile << (int)K4ABT_JOINT_COUNT << std::endl;
+        outFile.close();
+    }
+
+
+
 }
 
 KFRBodyTracker::~KFRBodyTracker()
@@ -77,36 +87,45 @@ void KFRBodyTracker::receiveFrame(k4a_capture_t capture)
     // do stuff
     if(this->_writeToFile){
         uint64_t timestamp = k4abt_frame_get_device_timestamp_usec(body_frame);
-        outFile << timestamp;
-        std::cout << "timestamp: " + std::to_string(timestamp) << std::endl;
+        outFile << timestamp << std::endl;
+        //std::cout << "timestamp: " + std::to_string(timestamp) << " ";
         uint32_t numBodies = k4abt_frame_get_num_bodies(body_frame);
-        outFile << numBodies;
-        std::cout << "num bodies: " + std::to_string(numBodies) << std::endl;
+        outFile << numBodies << std::endl;
+        //std::cout << "num bodies: " + std::to_string(numBodies) << " ";
         //loop through each body
         for(int i = 0; i < numBodies; i++){
             //array of vectors for storing positions and orientations of each joint
-            std::vector<float> positions[(int)K4ABT_JOINT_COUNT];
-            std::vector<float> orientations[(int)K4ABT_JOINT_COUNT];
+            // std::vector<float> positions[(int)K4ABT_JOINT_COUNT];
+            // std::vector<float> orientations[(int)K4ABT_JOINT_COUNT];
             //get skeleton of 1 body if any
             k4abt_skeleton_t skeleton;
             k4abt_frame_get_body_skeleton(body_frame, i, &skeleton);
             uint32_t body_id = k4abt_frame_get_body_id(body_frame, i);
-            outFile << body_id;
+            outFile << body_id << std::endl;
             for(int j = 0; j < (int)K4ABT_JOINT_COUNT; j++){
-                positions[j].push_back(skeleton.joints[j].position.xyz.x);
-                positions[j].push_back(skeleton.joints[j].position.xyz.y);
-                positions[j].push_back(skeleton.joints[j].position.xyz.z);
+                // positions[j].push_back(skeleton.joints[j].position.xyz.x);
+                // positions[j].push_back(skeleton.joints[j].position.xyz.y);
+                // positions[j].push_back(skeleton.joints[j].position.xyz.z);
+                outFile << skeleton.joints[j].position.xyz.x << std::endl;
+                outFile << skeleton.joints[j].position.xyz.y << std::endl;
+                outFile << skeleton.joints[j].position.xyz.z << std::endl;
 
-                orientations[j].push_back(skeleton.joints[j].orientation.wxyz.w);
-                orientations[j].push_back(skeleton.joints[j].orientation.wxyz.x);
-                orientations[j].push_back(skeleton.joints[j].orientation.wxyz.y);
-                orientations[j].push_back(skeleton.joints[j].orientation.wxyz.z);
+                // orientations[j].push_back(skeleton.joints[j].orientation.wxyz.w);
+                // orientations[j].push_back(skeleton.joints[j].orientation.wxyz.x);
+                // orientations[j].push_back(skeleton.joints[j].orientation.wxyz.y);
+                // orientations[j].push_back(skeleton.joints[j].orientation.wxyz.z);
+                outFile << skeleton.joints[j].orientation.wxyz.x << std::endl;
+                outFile << skeleton.joints[j].orientation.wxyz.y << std::endl;
+                outFile << skeleton.joints[j].orientation.wxyz.z << std::endl;
+                outFile << skeleton.joints[j].orientation.wxyz.w << std::endl;
+
             }
-            this->writeArrayToFile(positions, outFile);
-            this->writeArrayToFile(orientations, outFile);
+            // this->writeArrayToFile(positions, outFile);
+            // this->writeArrayToFile(orientations, outFile);
             //std::cout << positions[0].at(0) << std::endl;
         }
-
+        //outFile << std::endl;
+        outFile.close();
 
     }
     k4abt_frame_release(body_frame);
