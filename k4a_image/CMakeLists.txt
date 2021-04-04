@@ -80,6 +80,11 @@ add_executable(body-tracker
     ${KINECT_WRAPPER_SOURCES}
 )
 
+find_package(GLUT REQUIRED)
+add_executable(body-vis
+    src/bodyVisualizer.cpp
+)
+
 add_library(sockets SHARED src/sockets.cpp)
 
 include_directories(
@@ -171,4 +176,11 @@ target_link_libraries(body-tracker
 target_link_libraries(apriltag_demo
     ${APRIL_TAG_LIBRARY} 
     ${OpenCV_LIBS} 
+)
+
+target_link_libraries(body-vis
+    ${GLEW_LIBRARIES}
+    ${GLUT_LIBRARY}
+    GL
+    GLU
 )
