@@ -1,3 +1,5 @@
+#ifndef CALIBRATION_MANAGER_H
+#define CALIBRATION_MANAGER_H
 #include <Eigen/Eigen>
 
 enum AnchorType {
@@ -56,3 +58,5 @@ public:
 };
 
 Calibration consolidateMeasurements(std::vector<Measurement> &measurements);
+
+#endif

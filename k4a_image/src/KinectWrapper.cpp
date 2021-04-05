@@ -30,6 +30,13 @@ KinectWrapper::KinectWrapper(uint8_t deviceIndex, k4a_wired_sync_mode_t syncMode
 
     // Recipient specific config
     _kfr.getDevice(_device, _config);
+    k4a_calibration_t sensor_calibration;
+    if (K4A_RESULT_SUCCEEDED != k4a_device_get_calibration(_device, _config.depth_mode, _config.color_resolution, &sensor_calibration))
+    {
+        printf("Get depth camera calibration failed!\n");
+        return;
+    }
+    _kfr.getCalibration(sensor_calibration);
 
     // try to start cameras
     if (K4A_RESULT_SUCCEEDED != k4a_device_start_cameras(_device, &_config))

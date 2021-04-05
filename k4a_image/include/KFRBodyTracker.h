@@ -11,7 +11,6 @@ public:
     KFRBodyTracker(const char* path, bool realTime = true, bool writeToFile = false);
     ~KFRBodyTracker();
     void receiveFrame(k4a_capture_t capture);
-    void getDevice(k4a_device_t device, k4a_device_configuration_t config) override;
     void getCalibration(k4a_calibration_t calib) override;
 
 protected:

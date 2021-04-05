@@ -46,7 +46,7 @@ Eigen::MatrixXd translation(double x, double y, double z) {
 int main()
 {
   //KFRRecord kfrRecord("/home/fri/Documents/henry/dynamic_tracker/k4a_image/test.mkv");
-  KFRAprilTags kfrAprilTags;
+  KFRAprilTags kfrAprilTags(0);
   KFRDisplay kfrDisplay(2160, 3840);
   KinectWrapper kinectWrapper(0, kfrAprilTags);
   int n = 240;
