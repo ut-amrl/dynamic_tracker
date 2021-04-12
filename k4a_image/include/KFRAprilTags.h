@@ -6,8 +6,8 @@
 
 class KFRAprilTags : public K4ACaptureRecipient {
 private:
-    std::shared_ptr<apriltag_detector_t> detector;
     std::shared_ptr<apriltag_family_t> family;
+    std::shared_ptr<apriltag_detector_t> detector;
     k4a_calibration_intrinsics_t intrinsics;
     int camIndex;
 public:

@@ -4,6 +4,9 @@
 #include "KinectWrapper.h"
 #include "calibration.h"
 
+#include "KFRAprilTags.h"
+#include "CalibrationManager.h"
+
 using namespace Eigen;
 
 int chessboardRows = 4;
@@ -11,19 +14,8 @@ int chessboardCols = 6;
 // should be 30 mm
 double chessboardSpacing = 30;
 
-void writeMatrix(std::ostream &out, MatrixXd matrix) {
-    for (int row = 0; row < matrix.rows(); row++) {
-        for (int col = 0; col < matrix.cols(); col++) {
-            if (col > 0) {
-                out << " ";
-            }
-            out << matrix(row, col);
-        }
-        out << "\n";
-    }
-}
-
-int main()
+// NOTE: file format is different here
+/*int main()
 {
     MatrixXd chessboardPoints = ModelChessboard(chessboardRows, chessboardCols, chessboardSpacing).getModelCBH2D();
 
@@ -63,4 +55,32 @@ int main()
     output.close();
 
     std::cout << "Finished capturing points" << std::endl;
+}*/
+
+int main() {
+    int numCams = KinectWrapper::getNumCameras();
+    std::vector<Measurement> measurements;
+    int baseCamera = -1;
+    for (int i = 0; i < numCams; i++) {
+        KFRAprilTags recipient(i);
+        KinectWrapper wrapper(i, recipient);
+        wrapper.capture();
+        
+        if (baseCamera == -1 && recipient.measurements.size() > 0) {
+            baseCamera = i;
+        }
+        measurements.insert(measurements.end(), recipient.measurements.begin(), recipient.measurements.end());
+    }
+
+    if (baseCamera == -1) {
+        std::cerr << "ERROR: No tags found" << std::endl;
+        return 1;
+    }
+
+    Anchor base(CAMERA, baseCamera);
+
+    Calibration calib(measurements);
+    std::ofstream out("calibration.txt");
+    calib.write(out);
+    return 0;
 }

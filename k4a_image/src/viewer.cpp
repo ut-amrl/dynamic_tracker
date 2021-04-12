@@ -7,7 +7,7 @@
 #include <Eigen/Eigen>
 
 #include "KinectWrapper.h"
-#include "calibration.h"
+#include "CalibrationManager.h"
 
 Eigen::MatrixXd RIGID_TRANSFORMATION(4, 4);
 
@@ -150,13 +150,16 @@ Eigen::Quaterniond getArcballRotation(double startX, double startY, double endX,
 }*/
 
 int main(int argc, char** argv) {
-    std::vector<Eigen::MatrixXd> chessboardToCamera = calibrateFromFile("calibration.txt");
+    Calibration poses = Calibration::readFile("calibration.txt");
     std::vector<KinectWrapper*> wrappers;
 
     if (!glfwInit())
         return -1;
 
-    for(int i = 0; i < chessboardToCamera.size(); i++) {
+    for(int i = 0; i < KinectWrapper::getNumCameras(); i++) {
+        if (!poses.has(Anchor(CAMERA, i))) {
+            continue;
+        }
         KFRViewer *frameRecipient = new KFRViewer;
         KinectWrapper* wrapper = new KinectWrapper(i, *frameRecipient);
         wrappers.push_back(wrapper);
@@ -164,7 +167,7 @@ int main(int argc, char** argv) {
         frameRecipient->setCalibration(calib);
         wrapper->capture();
         frameRecipients.push_back(frameRecipient);
-        rigidTransformations.push_back(chessboardToCamera[0] * chessboardToCamera[i].inverse());
+        rigidTransformations.push_back(poses.translation(Anchor(CAMERA, i), poses.firstCamera()));
     }
 
     glfwSetErrorCallback(error_callback);

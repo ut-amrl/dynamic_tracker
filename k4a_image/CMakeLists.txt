@@ -20,12 +20,12 @@ SET(KINECT_WRAPPER_SOURCES
     src/KFRDisplay.cpp
     src/KFRBodyTracker.cpp
     src/conversions.cpp
+    src/CalibrationManager.cpp
 )
 
 SET(CALIBRATOR_SOURCES
     src/calibration.cpp
     src/KFRCalibration.cpp
-    src/CalibrationManager.cpp
 )
 
 add_executable(k4a_image
@@ -33,7 +33,6 @@ add_executable(k4a_image
     src/KFRAprilTags.cpp
     src/KFRRecord.cpp
     src/MultiRecorder.cpp
-    src/CalibrationManager.cpp
     ${KINECT_WRAPPER_SOURCES}
 )
 
@@ -56,6 +55,7 @@ add_executable(client
 
 add_executable(capture-corners
     src/capture-corners.cpp
+    src/KFRAprilTags.cpp
     ${CALIBRATOR_SOURCES}
     ${KINECT_WRAPPER_SOURCES}
 )
@@ -151,6 +151,7 @@ target_link_libraries(capture-corners
     ${OpenCV_LIBS} 
 	${VISION_GEOMETRY_LIBRARY}
     ${Eigen3_LIBS}
+    ${APRIL_TAG_LIBRARY} 
     ceres
     k4a
     k4arecord
